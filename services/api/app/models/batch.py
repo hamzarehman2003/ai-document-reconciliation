@@ -18,5 +18,8 @@ class Batch(TimestampMixin, Base):
     name: Mapped[str] = mapped_column(String(200))
 
     documents: Mapped[list["Document"]] = relationship(
-        back_populates="batch", cascade="all, delete-orphan", passive_deletes=True
+        back_populates="batch",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Document.id",
     )

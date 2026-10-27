@@ -16,6 +16,10 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Follow PEP 8. Format with `ruff format` and lint with `ruff check`.
 - API structure: `app/main.py` only creates the app and includes routers. Each route group has
   its own file in `app/routes/` (e.g. `routes/health.py`) with an `APIRouter` named `router`.
+- Layers: `routes/` (thin: read request, call a service, return a schema) → `services/` (business logic,
+  no HTTP) → `models/` (database). Response shapes live in `schemas/`. Files go through `storage.py`.
+- Routes get the database and storage via `SessionDep` (`app/db.py`) and `StorageDep` (`app/storage.py`).
+- Routes that use the database are plain `def` (not `async def`), because SQLAlchemy sessions are synchronous.
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.
@@ -26,7 +30,8 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   that has already been applied; add a new one instead.
 - The database grows step by step: only add tables when a step actually needs them.
 - Status/type columns use `text_enum()` from `app/models/base.py` (stored as text, not Postgres enums).
-- DB tests use the rolled-back `session` fixture pattern in `tests/test_models.py`.
+- Shared test fixtures are in `services/api/tests/conftest.py`: `session` (rolled back after each test),
+  `storage` (temporary folder), `client` (API client using both), `make_pdf` (unique small PDF).
 
 ## Python environment
 - Use the existing virtual environment in `venv/` (repo root). Do not create another one.

@@ -4,7 +4,19 @@ AI invoice processing and 3-way matching. Upload invoices, purchase orders and r
 The AI extracts the data, the app matches the three documents, flags every mismatch with a
 reason, and exports only approved records.
 
-> Work in progress. Done so far: project foundations, demo dataset generator, database tables (batches, documents, jobs).
+> Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API.
+
+## API
+
+Interactive docs: http://localhost:8001/docs
+
+| Method | Path | What it does |
+|---|---|---|
+| POST | `/api/batches` | Upload 1–20 PDF/PNG/JPEG files; each is checked, de-duplicated, stored and queued |
+| GET | `/api/batches` | Recent batches with document counts |
+| GET | `/api/batches/{id}` | One batch with its documents |
+| GET | `/api/documents/{id}` | One document |
+| GET | `/api/documents/{id}/file` | The original file |
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

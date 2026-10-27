@@ -17,5 +17,10 @@ class Settings(BaseSettings):
     database_url: str
     gemini_api_key: SecretStr = SecretStr("")
 
+    # Uploads
+    upload_dir: Path = PROJECT_ROOT / "data" / "uploads"
+    max_upload_mb: int = 15
+    max_files_per_batch: int = 20
+
 
 settings = Settings()

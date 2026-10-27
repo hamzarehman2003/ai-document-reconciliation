@@ -1,30 +1,9 @@
-"""Database tests. They need Postgres running and `alembic upgrade head` applied.
+"""Database model tests. The `session` fixture lives in conftest.py."""
 
-Every test runs inside a transaction that is rolled back at the end,
-so nothing is left behind in the database.
-"""
-
-from collections.abc import Iterator
-
-import pytest
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.db import check_database, engine
 from app.models import Batch, Document, DocumentStatus, DocumentType, Job, JobStatus
-
-
-@pytest.fixture
-def session() -> Iterator[Session]:
-    if not check_database():
-        pytest.skip("Postgres is not running (docker compose up -d db)")
-    with engine.connect() as connection:
-        transaction = connection.begin()
-        with Session(
-            bind=connection, join_transaction_mode="create_savepoint"
-        ) as db_session:
-            yield db_session
-        transaction.rollback()
 
 
 def make_document(filename: str) -> Document:
