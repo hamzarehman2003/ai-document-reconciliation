@@ -1,0 +1,15 @@
+# Install with: venv/Scripts/python -m pip install -r requirements.txt
+
+# Backend API
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic-settings==2.16.1
+
+# Database
+sqlalchemy==2.1.6
+psycopg[binary]==3.3.6
+
+# Development tools
+pytest==9.1.1
+httpx2==2.16.0
+ruff==0.17.3

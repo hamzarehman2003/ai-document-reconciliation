@@ -1,0 +1,15 @@
+# Secrets
+.env
+
+# Downloaded datasets (large)
+data/raw/
+
+# Python
+venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+
+# Node / Next.js
+node_modules/
+.next/
