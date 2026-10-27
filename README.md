@@ -4,7 +4,7 @@ AI invoice processing and 3-way matching. Upload invoices, purchase orders and r
 The AI extracts the data, the app matches the three documents, flags every mismatch with a
 reason, and exports only approved records.
 
-> Work in progress. Step 1: project foundations (database, API and web app talking to each other).
+> Work in progress. Done so far: project foundations, demo dataset generator, database tables (batches, documents, jobs).
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui
@@ -27,6 +27,7 @@ docker compose up -d db
 python -m venv venv
 venv/Scripts/python -m pip install -r requirements.txt   # macOS/Linux: venv/bin/python
 cd services/api
+../../venv/Scripts/alembic upgrade head                  # create/update database tables
 ../../venv/Scripts/python -m uvicorn app.main:app --reload --port 8001
 
 # 4. Web app  (http://localhost:3001), in a second terminal

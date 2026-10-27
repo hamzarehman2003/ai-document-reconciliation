@@ -20,6 +20,14 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.
 
+## Database
+- SQLAlchemy 2 typed models in `app/models/` (one file per table, all imported in `app/models/__init__.py`).
+- Every schema change is a new Alembic migration in `services/api/alembic/versions/`. Never edit a migration
+  that has already been applied; add a new one instead.
+- The database grows step by step: only add tables when a step actually needs them.
+- Status/type columns use `text_enum()` from `app/models/base.py` (stored as text, not Postgres enums).
+- DB tests use the rolled-back `session` fixture pattern in `tests/test_models.py`.
+
 ## Python environment
 - Use the existing virtual environment in `venv/` (repo root). Do not create another one.
 - Every Python package goes in the root `requirements.txt` with a pinned version.
@@ -27,7 +35,9 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   `venv/Scripts/python -m pip install -r requirements.txt`.
 
 ## Commands
-- Database: `docker compose up -d db`
+- Database: `docker compose up -d db`, then from `services/api`: `../../venv/Scripts/alembic upgrade head`
+- New migration (from `services/api`): `../../venv/Scripts/alembic revision --autogenerate --rev-id 0002 -m "what changed"`
+  (next free number), then review the generated file and run `alembic check`.
 - API: from `services/api`, `../../venv/Scripts/python -m uvicorn app.main:app --reload --port 8001`
 - Web: from `apps/web`, `npm run dev` (port 3001; `/api/*` is forwarded to the API on 8001)
 - Ports 3000 and 8000 are taken by the user's other Docker project (Grafana, inference API). Don't use them.
