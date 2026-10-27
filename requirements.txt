@@ -9,6 +9,14 @@ pydantic-settings==2.16.1
 sqlalchemy==2.1.6
 psycopg[binary]==3.3.6
 
+# Documents (PDF reading/writing, images)
+pymupdf==2.0
+pillow==13.0.0
+
+# Demo dataset generator
+faker==40.43.0
+reportlab==5.1.0
+
 # Development tools
 pytest==9.1.1
 httpx2==2.16.0

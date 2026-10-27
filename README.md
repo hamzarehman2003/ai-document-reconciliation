@@ -35,10 +35,24 @@ npm install
 npm run dev
 ```
 
+## Demo dataset
+
+The 3-way match demo needs documents that belong together, so we generate them:
+fictional purchase orders, goods receipts and invoices with deliberate mistakes
+(overbilling, price changes, wrong totals, duplicates...) and a `truth.json` answer key per set.
+About 30% of documents are saved as noisy "scans" with no text layer.
+
+```bash
+venv/Scripts/python -m scripts.generate_dataset --sets 50 --seed 42
+# → data/generated/sets/SET-0001/{PO,GRN,INV}*.pdf + truth.json, and data/generated/manifest.json
+```
+
+All companies and documents are fictional.
+
 ## Checks
 
 ```bash
-venv/Scripts/ruff format services && venv/Scripts/ruff check services
+venv/Scripts/ruff format services scripts && venv/Scripts/ruff check services scripts
 venv/Scripts/python -m pytest
 cd apps/web && npm run lint
 ```

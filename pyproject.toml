@@ -3,7 +3,7 @@
 [tool.ruff]
 line-length = 88
 target-version = "py312"
-src = ["services/api"]
+src = [".", "services/api"]
 
 [tool.ruff.lint]
 # E/W: PEP 8 style, F: errors, I: import order, N: PEP 8 naming,
@@ -11,5 +11,5 @@ src = ["services/api"]
 select = ["E", "W", "F", "I", "N", "UP", "B"]
 
 [tool.pytest.ini_options]
-pythonpath = ["services/api"]
-testpaths = ["services/api/tests"]
+pythonpath = [".", "services/api"]
+testpaths = ["services/api/tests", "scripts/generate_dataset/tests"]

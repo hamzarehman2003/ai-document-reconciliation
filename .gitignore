@@ -1,8 +1,9 @@
 # Secrets
 .env
 
-# Downloaded datasets (large)
+# Downloaded and generated datasets (large, can be recreated)
 data/raw/
+data/generated/
 
 # Python
 venv/

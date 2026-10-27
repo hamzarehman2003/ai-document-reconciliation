@@ -31,7 +31,8 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - API: from `services/api`, `../../venv/Scripts/python -m uvicorn app.main:app --reload --port 8001`
 - Web: from `apps/web`, `npm run dev` (port 3001; `/api/*` is forwarded to the API on 8001)
 - Ports 3000 and 8000 are taken by the user's other Docker project (Grafana, inference API). Don't use them.
-- Python checks: `venv/Scripts/ruff format services`, `venv/Scripts/ruff check services`, `venv/Scripts/python -m pytest`
+- Demo dataset: `venv/Scripts/python -m scripts.generate_dataset --sets 50 --seed 42` → `data/generated/` (git-ignored)
+- Python checks: `venv/Scripts/ruff format services scripts`, `venv/Scripts/ruff check services scripts`, `venv/Scripts/python -m pytest`
 - Web checks: from `apps/web`, `npm run lint` and `npx tsc --noEmit`
 
 ## Frontend code style
@@ -51,6 +52,8 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 ## Secrets and data
 - API key is in `.env` as `GEMINI_API_KEY`. Never print it, log it, commit it or hard-code it.
 - `data/raw/` holds downloaded datasets (Northwind invoice PDFs, SROIE and CORD receipts). It is git-ignored; never commit it.
+- `data/generated/` is created by the dataset generator (linked PO/receipt/invoice sets + `truth.json`).
+  Scenario codes in `scripts/generate_dataset/models.py` (`Scenario`) are the same codes the matching rules must return.
 - Commit only small sample files and generated demo data that are needed by the app.
 
 ## Git
