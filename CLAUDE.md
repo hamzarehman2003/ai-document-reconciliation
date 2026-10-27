@@ -14,6 +14,8 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 
 ## Python code style
 - Follow PEP 8. Format with `ruff format` and lint with `ruff check`.
+- API structure: `app/main.py` only creates the app and includes routers. Each route group has
+  its own file in `app/routes/` (e.g. `routes/health.py`) with an `APIRouter` named `router`.
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.

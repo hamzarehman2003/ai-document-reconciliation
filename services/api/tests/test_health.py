@@ -1,13 +1,14 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app import main
+from app.main import app
+from app.routes import health
 
-client = TestClient(main.app)
+client = TestClient(app)
 
 
 def test_health_when_database_is_up(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, "check_database", lambda: True)
+    monkeypatch.setattr(health, "check_database", lambda: True)
 
     response = client.get("/api/health")
 
@@ -16,7 +17,7 @@ def test_health_when_database_is_up(monkeypatch: pytest.MonkeyPatch) -> None:
 
 
 def test_health_when_database_is_down(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(main, "check_database", lambda: False)
+    monkeypatch.setattr(health, "check_database", lambda: False)
 
     response = client.get("/api/health")
 
