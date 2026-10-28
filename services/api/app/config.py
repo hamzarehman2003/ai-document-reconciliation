@@ -22,5 +22,10 @@ class Settings(BaseSettings):
     max_upload_mb: int = 15
     max_files_per_batch: int = 20
 
+    # Background worker
+    worker_poll_seconds: float = 1.0
+    job_retry_base_seconds: int = 30
+    stale_job_minutes: int = 10
+
 
 settings = Settings()

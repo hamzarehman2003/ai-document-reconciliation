@@ -20,6 +20,10 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   no HTTP) → `models/` (database). Response shapes live in `schemas/`. Files go through `storage.py`.
 - Routes get the database and storage via `SessionDep` (`app/db.py`) and `StorageDep` (`app/storage.py`).
 - Routes that use the database are plain `def` (not `async def`), because SQLAlchemy sessions are synchronous.
+- Background work: add a handler in `app/services/`, register it in `HANDLERS` in `app/worker.py`, and queue it
+  with a `Job(kind=..., payload=...)`. Raise `PermanentJobError` for errors that retrying can't fix;
+  any other exception is retried with backoff (`app/services/job_queue.py`).
+- Worker tests use the `empty_queue` fixture (`tests/test_worker.py`) to hide jobs from the dev database.
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.
@@ -44,6 +48,8 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - New migration (from `services/api`): `../../venv/Scripts/alembic revision --autogenerate --rev-id 0002 -m "what changed"`
   (next free number), then review the generated file and run `alembic check`.
 - API: from `services/api`, `../../venv/Scripts/python -m uvicorn app.main:app --reload --port 8001`
+- Worker (separate process, needed for uploads to be processed): from `services/api`,
+  `../../venv/Scripts/python -m app.worker` (add `--once` to process what's waiting and exit)
 - Web: from `apps/web`, `npm run dev` (port 3001; `/api/*` is forwarded to the API on 8001)
 - Ports 3000 and 8000 are taken by the user's other Docker project (Grafana, inference API). Don't use them.
 - Demo dataset: `venv/Scripts/python -m scripts.generate_dataset --sets 50 --seed 42` → `data/generated/` (git-ignored)

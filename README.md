@@ -4,7 +4,8 @@ AI invoice processing and 3-way matching. Upload invoices, purchase orders and r
 The AI extracts the data, the app matches the three documents, flags every mismatch with a
 reason, and exports only approved records.
 
-> Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API.
+> Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API,
+> background worker.
 
 ## API
 
@@ -17,6 +18,11 @@ Interactive docs: http://localhost:8001/docs
 | GET | `/api/batches/{id}` | One batch with its documents |
 | GET | `/api/documents/{id}` | One document |
 | GET | `/api/documents/{id}/file` | The original file |
+| GET | `/api/jobs?status=…` | Background jobs: queued, running, done or failed, with attempts and last error |
+
+Uploads are processed by a separate **worker** process that takes jobs from a Postgres-backed queue
+(`SELECT … FOR UPDATE SKIP LOCKED`), retries temporary failures with backoff (30 s, 60 s, 120 s) and marks
+documents as failed with a reason when a file can't be processed. Several workers can run side by side.
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui
@@ -42,7 +48,11 @@ cd services/api
 ../../venv/Scripts/alembic upgrade head                  # create/update database tables
 ../../venv/Scripts/python -m uvicorn app.main:app --reload --port 8001
 
-# 4. Web app  (http://localhost:3001), in a second terminal
+# 4. Worker, in a second terminal (processes uploaded documents)
+cd services/api
+../../venv/Scripts/python -m app.worker
+
+# 5. Web app  (http://localhost:3001), in a third terminal
 cd apps/web
 npm install
 npm run dev
