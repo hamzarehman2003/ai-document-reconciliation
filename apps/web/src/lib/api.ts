@@ -244,9 +244,9 @@ export async function listDocuments(): Promise<DocumentRow[]> {
   return getJson<DocumentRow[]>("/api/documents?limit=500");
 }
 
-/** The activity log, newest first. */
-export async function listAuditEvents(): Promise<AuditEvent[]> {
-  return getJson<AuditEvent[]>("/api/audit-events?limit=300");
+/** The activity log, newest first; `mine` keeps only what the signed-in person did. */
+export async function listAuditEvents(mine = false): Promise<AuditEvent[]> {
+  return getJson<AuditEvent[]>(`/api/audit-events?limit=300${mine ? "&mine=true" : ""}`);
 }
 
 export async function getDashboard(): Promise<Dashboard> {

@@ -8,6 +8,7 @@ from pydantic import WithJsonSchema
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.auth import CurrentUserDep
 from app.config import settings
 from app.db import SessionDep
 from app.models import Batch
@@ -32,6 +33,7 @@ BinaryFile = Annotated[
 def upload_batch(
     session: SessionDep,
     storage: StorageDep,
+    user: CurrentUserDep,
     files: Annotated[list[BinaryFile], File(description="PDF, PNG or JPEG files")],
     name: Annotated[str | None, Form(max_length=200)] = None,
 ) -> UploadResponse:
@@ -48,7 +50,12 @@ def upload_batch(
     batch_name = name or f"Upload {datetime.now():%d %b %Y %H:%M}"
     try:
         batch, results = create_batch_from_uploads(
-            session, storage, incoming, batch_name, settings.max_upload_mb
+            session,
+            storage,
+            incoming,
+            batch_name,
+            settings.max_upload_mb,
+            uploaded_by=user.actor,
         )
     except NoFilesAcceptedError as error:
         raise HTTPException(

@@ -6,15 +6,23 @@ action itself is saved: the log never claims something that didn't happen.
 
 from dataclasses import dataclass
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import AuditAction, AuditEvent, AuditObject, Document, MatchCase
 
-SYSTEM = "system"
-# No login yet: people are named by the request, with this default.
-DEFAULT_REVIEWER = "Demo reviewer"
+
+@dataclass(frozen=True)
+class Actor:
+    """Who did something: a signed-in person (with their user id) or the system."""
+
+    name: str
+    user_id: UUID | None = None
+
+
+SYSTEM = Actor("system")
 
 
 @dataclass(frozen=True)
@@ -27,7 +35,7 @@ class Subject:
 
 def record(
     session: Session,
-    actor: str,
+    actor: Actor,
     action: AuditAction,
     object_type: AuditObject,
     object_id: int,
@@ -35,7 +43,8 @@ def record(
 ) -> None:
     session.add(
         AuditEvent(
-            actor=actor,
+            actor=actor.name,
+            actor_id=actor.user_id,
             action=action,
             object_type=object_type,
             object_id=object_id,

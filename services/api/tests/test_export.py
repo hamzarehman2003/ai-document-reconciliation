@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 from app.models import AuditAction, AuditEvent, AuditObject, Document, MatchCase
 from app.services.matching import update_matches
 from app.services.review import Decision, decide
-from factories import add_three_way_set, unique
+from factories import SARA, add_three_way_set, unique
 
 
 def invoice_case(
@@ -28,9 +28,9 @@ def invoice_case(
     update_matches(session, invoice)
     case = invoice.match_case
     if decision is Decision.APPROVE:
-        decide(session, case, decision, "Sara (AP team)", "Checked")
+        decide(session, case, decision, SARA, "Checked")
     elif decision is Decision.REJECT:
-        decide(session, case, decision, "Sara (AP team)", "Wrong vendor")
+        decide(session, case, decision, SARA, "Wrong vendor")
     session.flush()
     return case
 
@@ -103,9 +103,7 @@ def test_exported_invoices_show_it_in_their_history(
     vendor = unique("Testco")
     case = invoice_case(session, vendor, Decision.APPROVE)
 
-    client.get(
-        "/api/exports/approved.xlsx", params={"vendor": vendor, "reviewer": "Omar"}
-    )
+    client.get("/api/exports/approved.xlsx", params={"vendor": vendor})
 
     event = session.scalars(
         select(AuditEvent).where(
@@ -114,5 +112,5 @@ def test_exported_invoices_show_it_in_their_history(
             AuditEvent.action == AuditAction.CASE_EXPORTED,
         )
     ).one()
-    assert event.actor == "Omar"
+    assert (event.actor, event.actor_id) == (SARA.name, SARA.user_id)
     assert event.details == {"format": "xlsx"}

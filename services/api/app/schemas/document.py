@@ -10,7 +10,6 @@ from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import Document, DocumentStatus, DocumentType
-from app.services.audit import DEFAULT_REVIEWER
 
 
 class DocumentOut(BaseModel):
@@ -98,7 +97,6 @@ class CorrectionRequest(BaseModel):
     value: str | None = Field(
         default=None, max_length=500, description="Empty means 'not on the document'."
     )
-    reviewer: str = Field(default=DEFAULT_REVIEWER, min_length=1, max_length=100)
     note: str | None = Field(default=None, max_length=1000)
 
 

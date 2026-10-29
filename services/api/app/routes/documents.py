@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.auth import CurrentUserDep
 from app.db import SessionDep
 from app.models import Document, DocumentStatus, Job, JobStatus
 from app.schemas.document import CorrectionRequest, DocumentDetail, DocumentOut
@@ -40,7 +41,10 @@ def get_document(session: SessionDep, document_id: int) -> DocumentDetail:
 
 @router.patch("/{document_id}/fields")
 def correct_document_field(
-    session: SessionDep, document_id: int, request: CorrectionRequest
+    session: SessionDep,
+    user: CurrentUserDep,
+    document_id: int,
+    request: CorrectionRequest,
 ) -> DocumentDetail:
     """Correct a value the AI misread. The 3-way match is then checked again."""
     document = get_document_or_404(session, document_id)
@@ -52,7 +56,7 @@ def correct_document_field(
             document,
             request.field,
             request.value,
-            request.reviewer,
+            user.actor,
             request.note,
         )
     except CorrectionError as error:

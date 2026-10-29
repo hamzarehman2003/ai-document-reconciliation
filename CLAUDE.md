@@ -66,7 +66,7 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Corrections go through `app/services/corrections.py` `correct_field()` (typed, validated) and are stored in
   `field_corrections`; `reapply_corrections()` puts them back after every new AI read. A correction queues a re-match.
 - Every user or system action writes an `AuditEvent` with `app/services/audit.py` `record()`, in the same transaction
-  as the action. No login yet: the reviewer's name comes with the request (default "Demo reviewer").
+  as the action. The person is the signed-in user (see "Users and login"), never a name sent in the request.
 - The audit API names what each event is about (`subject`, `document_id`) with `describe_subjects()`, batched
   per request; the event wording for the UI lives in `apps/web/src/lib/audit.ts`.
 - Shared test helpers: `tests/factories.py` (`add_document`, `add_three_way_set`); fixtures `empty_queue`, `run_jobs`.
@@ -89,6 +89,23 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.
+
+## Users and login (Supabase Auth)
+- Supabase handles sign up, login and sessions; we never store passwords. One shared team workspace:
+  everyone sees all documents; users only differ in who did what.
+- `apps/web/src/proxy.ts` runs before every request: renews the session cookie, sends logged-out visitors
+  to `/login`, and forwards `/api/*` to FastAPI with `Authorization: Bearer <token>` (it replaces the old
+  next.config rewrite). Login/signup pages are in `src/app/(auth)/`.
+- The API checks the token in `app/auth.py` (signature with Supabase's public keys, audience, issuer,
+  expiry). Every router except health requires a login (`main.py`). Routes that record an action take
+  `user: CurrentUserDep` and pass `user.actor` to the service; the worker uses `SYSTEM`.
+- Services take an `Actor` (name + user id), never a name typed into a request. `AuditEvent.actor_id`
+  powers "Only mine" (`?mine=true`).
+- API tests are signed in as `TEST_USER` (`tests/factories.py`) via the `client` fixture; `tests/test_auth.py`
+  signs tokens with a local key, so tests never call Supabase.
+- Web settings live in `apps/web/.env.local` (git-ignored; template `apps/web/.env.example`), API settings
+  in the root `.env`. Only the public URL and publishable key are used; never the secret/service_role key.
+- "Try the demo" logs into a shared demo account (`NEXT_PUBLIC_DEMO_*`); its password is public by design.
 
 ## Database
 - SQLAlchemy 2 typed models in `app/models/` (one file per table, all imported in `app/models/__init__.py`).

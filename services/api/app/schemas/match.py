@@ -9,14 +9,12 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.models import MatchCase, MatchStatus, ReviewStatus
 from app.rules.types import Code, Severity
 from app.schemas.document import DocumentOut
-from app.services.audit import DEFAULT_REVIEWER
 from app.services.review import Decision
 
 
 class DecisionRequest(BaseModel):
     decision: Decision
     note: str | None = Field(default=None, max_length=1000)
-    reviewer: str = Field(default=DEFAULT_REVIEWER, min_length=1, max_length=100)
 
 
 class DiscrepancyOut(BaseModel):

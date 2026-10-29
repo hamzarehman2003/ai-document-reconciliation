@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Logo } from "@/components/ledger/logo";
 import { SystemStatusDot } from "@/components/shell/system-status-dot";
 import { ThemeToggle } from "@/components/shell/theme-toggle";
+import { UserMenu } from "@/components/shell/user-menu";
 import {
   Sidebar,
   SidebarContent,
@@ -41,6 +42,7 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
+        <UserMenu />
         <div className="flex items-center justify-between gap-2 group-data-[collapsible=icon]:flex-col">
           <SystemStatusDot />
           <ThemeToggle />

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.models import AuditAction, AuditObject, Batch, Document, Job
 from app.schemas.batch import UploadOutcome, UploadResult
-from app.services.audit import DEFAULT_REVIEWER, record
+from app.services.audit import Actor, record
 from app.storage import LocalStorage
 
 # The first bytes of each allowed file type ("magic numbers").
@@ -65,6 +65,7 @@ def create_batch_from_uploads(
     files: list[IncomingFile],
     batch_name: str,
     max_upload_mb: int,
+    uploaded_by: Actor,
 ) -> tuple[Batch, list[UploadResult]]:
     """Validate the files, store the good ones and queue a job for each.
 
@@ -133,7 +134,7 @@ def create_batch_from_uploads(
             )
             record(
                 session,
-                DEFAULT_REVIEWER,
+                uploaded_by,
                 AuditAction.DOCUMENT_UPLOADED,
                 AuditObject.DOCUMENT,
                 document.id,

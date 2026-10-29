@@ -27,7 +27,7 @@ def case_for(session: Session, *, received: str, billed: str = "8") -> MatchCase
 
 
 def decide(client: TestClient, case: MatchCase, decision: str, note: str | None = None):
-    body = {"decision": decision, "note": note, "reviewer": "Sara (AP team)"}
+    body = {"decision": decision, "note": note}
     return client.post(f"/api/match-cases/{case.id}/decision", json=body)
 
 

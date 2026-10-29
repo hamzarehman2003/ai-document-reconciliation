@@ -94,9 +94,13 @@ every mistake and the limits of the test are in [docs/evaluation.md](docs/evalua
 
 Requirements: Python 3.12, Node.js 20+, Docker Desktop.
 
+Login uses [Supabase Auth](https://supabase.com/auth) (free): create a project, and under
+Authentication → Sign In / Providers → Email you can turn off "Confirm email" for instant sign-ups.
+
 ```bash
 # 1. Settings
-cp .env.example .env            # then add your GEMINI_API_KEY
+cp .env.example .env                      # add GEMINI_API_KEY and SUPABASE_URL
+cp apps/web/.env.example apps/web/.env.local   # add the Supabase URL and publishable key
 
 # 2. Database
 docker compose up -d db

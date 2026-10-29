@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   CircleCheck,
   CircleX,
@@ -13,10 +14,12 @@ import {
   PencilLine,
   RotateCcw,
   ScanText,
+  UserRound,
   type LucideIcon,
 } from "lucide-react";
 
 import { EmptyState } from "@/components/ledger/empty-state";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listAuditEvents, type AuditEvent } from "@/lib/api";
@@ -53,15 +56,18 @@ type Row = { event: AuditEvent; count: number };
 
 /** The audit log as a timeline, grouped by day, newest first. */
 export function ActivityTimeline() {
+  const router = useRouter();
+  // "Only mine" lives in the URL (?mine=1), so it can be linked to from the user menu.
+  const mine = useSearchParams().get("mine") === "1";
   const [events, setEvents] = useState<AuditEvent[] | null>(null);
   const [error, setError] = useState(false);
   const [group, setGroup] = useState<GroupKey>("all");
 
   useEffect(() => {
-    listAuditEvents()
+    listAuditEvents(mine)
       .then(setEvents)
       .catch(() => setError(true));
-  }, []);
+  }, [mine]);
 
   if (error) {
     return (
@@ -79,21 +85,35 @@ export function ActivityTimeline() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Tabs value={group} onValueChange={(value) => setGroup(value as GroupKey)}>
-        <TabsList variant="line" className="flex-wrap">
-          {GROUPS.map((item) => (
-            <TabsTrigger key={item.key} value={item.key} className="px-2">
-              {item.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs value={group} onValueChange={(value) => setGroup(value as GroupKey)}>
+          <TabsList variant="line" className="flex-wrap">
+            {GROUPS.map((item) => (
+              <TabsTrigger key={item.key} value={item.key} className="px-2">
+                {item.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+        <Button
+          variant={mine ? "default" : "outline"}
+          size="sm"
+          aria-pressed={mine}
+          onClick={() => router.replace(mine ? "/activity" : "/activity?mine=1")}
+        >
+          <UserRound /> Only mine
+        </Button>
+      </div>
 
       {days.length === 0 ? (
         <EmptyState
           icon={History}
           title="Nothing here yet"
-          description="Uploads, corrections, decisions and exports will appear here as they happen."
+          description={
+            mine
+              ? "Things you upload, correct, approve or export will appear here."
+              : "Uploads, corrections, decisions and exports will appear here as they happen."
+          }
         />
       ) : (
         days.map(([day, rows]) => (

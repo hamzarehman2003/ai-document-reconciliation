@@ -17,6 +17,10 @@ class Settings(BaseSettings):
 
     database_url: str
 
+    # Login (Supabase Auth): the project URL, e.g. https://abcd.supabase.co.
+    # Tokens are checked with the project's public keys, so no secret is needed.
+    supabase_url: str = ""
+
     # AI extraction
     gemini_api_key: SecretStr = SecretStr("")
     gemini_model: str = "gemini-flash-lite-latest"

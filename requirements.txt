@@ -6,6 +6,9 @@ uvicorn[standard]==0.54.0
 pydantic-settings==2.16.1
 python-multipart==0.0.32
 
+# Login: check Supabase tokens with Supabase's public keys
+PyJWT[crypto]==2.15.1
+
 # Database
 sqlalchemy==2.1.6
 psycopg[binary]==3.3.6

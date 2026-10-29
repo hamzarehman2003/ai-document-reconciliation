@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.services.matching import update_matches
 from app.services.review import Decision, decide
-from factories import add_three_way_set
+from factories import SARA, add_three_way_set
 
 
 def dashboard(client: TestClient) -> dict:
@@ -57,7 +57,7 @@ def test_a_problem_invoice_counts_as_money_at_risk_until_approved(
         before["documents"]["by_type"]["invoice"] + 1
     )
 
-    decide(session, invoice.match_case, Decision.APPROVE, "Sara", "Rest arrives Monday")
+    decide(session, invoice.match_case, Decision.APPROVE, SARA, "Rest arrives Monday")
     session.flush()
     after_approval = dashboard(client)
 

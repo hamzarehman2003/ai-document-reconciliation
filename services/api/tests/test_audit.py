@@ -1,12 +1,15 @@
 """The audit log: every step of a document's life is recorded."""
 
 from collections.abc import Callable
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
+from app.models import AuditAction, AuditObject
+from app.services.audit import Actor, record
 from app.services.matching import update_matches
-from factories import add_three_way_set
+from factories import TEST_USER, add_three_way_set
 
 PDF = "application/pdf"
 
@@ -41,7 +44,7 @@ def test_filter_by_object(client: TestClient, session: Session) -> None:
     case = invoice.match_case
     client.post(
         f"/api/match-cases/{case.id}/decision",
-        json={"decision": "approve", "reviewer": "Sara (AP team)"},
+        json={"decision": "approve"},
     )
 
     events = client.get(
@@ -77,3 +80,28 @@ def test_events_name_the_invoice_they_are_about(
     for action in ("field_corrected", "case_approved"):  # a document and a case event
         assert by_action[action]["subject"] == expected
         assert by_action[action]["document_id"] == invoice.id
+
+
+def test_only_mine_keeps_what_the_signed_in_person_did(
+    client: TestClient, session: Session
+) -> None:
+    _, _, invoice = add_three_way_set(session, ordered="10", received="8", billed="8")
+    update_matches(session, invoice)  # done by the system
+    record(  # done by someone else
+        session,
+        Actor("Omar", uuid4()),
+        AuditAction.FIELD_CORRECTED,
+        AuditObject.DOCUMENT,
+        invoice.id,
+    )
+    client.post(
+        f"/api/match-cases/{invoice.match_case.id}/decision",
+        json={"decision": "approve"},
+    )
+
+    events = client.get(
+        "/api/audit-events", params={"document_id": invoice.id, "mine": True}
+    ).json()
+
+    assert [event["action"] for event in events] == ["case_approved"]
+    assert events[0]["actor"] == TEST_USER.name

@@ -32,7 +32,6 @@ def correct(
         json={
             "field": field,
             "value": value,
-            "reviewer": "Sara (AP team)",
             "note": "Checked the PDF",
         },
     )

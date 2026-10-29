@@ -6,7 +6,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models import AuditAction, AuditObject, MatchCase, ReviewStatus
-from app.services.audit import record
+from app.services.audit import Actor, record
 
 
 class Decision(StrEnum):
@@ -27,7 +27,7 @@ def decide(
     session: Session,
     case: MatchCase,
     decision: Decision,
-    reviewer: str,
+    reviewer: Actor,
     note: str | None = None,
 ) -> MatchCase:
     """Record the decision on the case and in the audit log. Does not commit."""
@@ -58,7 +58,7 @@ def decide(
             action = AuditAction.CASE_REOPENED
 
     reviewed = decision is not Decision.REOPEN
-    case.reviewed_by = reviewer if reviewed else None
+    case.reviewed_by = reviewer.name if reviewed else None
     case.reviewed_at = func.now() if reviewed else None
     case.review_note = note if reviewed else None
     record(

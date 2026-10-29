@@ -12,7 +12,7 @@ from enum import StrEnum
 from sqlalchemy.orm import Session
 
 from app.models import AuditAction, AuditObject, Document, FieldCorrection, LineItem
-from app.services.audit import record
+from app.services.audit import Actor, record
 
 CENT = Decimal("0.01")
 THOUSANDTH = Decimal("0.001")
@@ -61,7 +61,7 @@ def correct_field(
     document: Document,
     field: str,
     raw_value: str | None,
-    reviewer: str,
+    reviewer: Actor,
     note: str | None = None,
 ) -> FieldCorrection:
     """Set a new value, remember the old one, and log it. Does not commit."""
@@ -77,7 +77,7 @@ def correct_field(
         field=field,
         old_value=as_text(old_value),
         new_value=as_text(new_value),
-        corrected_by=reviewer,
+        corrected_by=reviewer.name,
         note=note,
     )
     session.add(correction)

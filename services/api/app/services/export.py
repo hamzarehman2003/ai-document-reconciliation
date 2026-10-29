@@ -20,7 +20,7 @@ from app.models import (
     MatchCase,
     ReviewStatus,
 )
-from app.services.audit import record
+from app.services.audit import Actor, record
 
 MONEY = "#,##0.00"
 QUANTITY = "#,##0.###"
@@ -147,7 +147,7 @@ def to_csv(cases: list[MatchCase]) -> bytes:
 
 
 def record_export(
-    session: Session, cases: list[MatchCase], actor: str, file_format: str
+    session: Session, cases: list[MatchCase], actor: Actor, file_format: str
 ) -> None:
     """Each exported invoice's history shows that it left the system."""
     for case in cases:

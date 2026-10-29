@@ -3,6 +3,7 @@
 from datetime import datetime
 from enum import StrEnum
 from typing import Any
+from uuid import UUID
 
 from sqlalchemy import DateTime, Index, String, func
 from sqlalchemy.dialects.postgresql import JSONB
@@ -38,7 +39,9 @@ class AuditEvent(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
-    actor: Mapped[str] = mapped_column(String(100))  # "system" or a reviewer's name
+    actor: Mapped[str] = mapped_column(String(100))  # "system" or the person's name
+    # The Supabase user id of the person; None for the system. For "only mine".
+    actor_id: Mapped[UUID | None] = mapped_column(index=True)
     action: Mapped[AuditAction] = mapped_column(text_enum(AuditAction))
     object_type: Mapped[AuditObject] = mapped_column(text_enum(AuditObject))
     object_id: Mapped[int]

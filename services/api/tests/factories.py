@@ -2,14 +2,23 @@
 
 from datetime import date
 from decimal import Decimal
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 from sqlalchemy.orm import Session
 
+from app.auth import User
 from app.models import Batch, Document, DocumentStatus, DocumentType, LineItem
 
 VENDOR = "Apex Office Supplies"
 ISSUE_DATE = date(2026, 3, 2)
+
+# The signed-in person in API tests (the `client` fixture); tests never call Supabase.
+TEST_USER = User(
+    id=UUID("5a7a0000-0000-4000-8000-000000000001"),
+    email="sara@example.com",
+    name="Sara (AP team)",
+)
+SARA = TEST_USER.actor
 
 
 def unique(prefix: str) -> str:

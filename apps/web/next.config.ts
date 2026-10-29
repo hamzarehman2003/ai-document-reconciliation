@@ -1,11 +1,15 @@
 import type { NextConfig } from "next";
 
-// Where the FastAPI backend runs. Browser requests to /api/* are forwarded there.
-const API_URL = process.env.API_URL ?? "http://localhost:8001";
+// /api/* is forwarded to FastAPI by src/proxy.ts (which adds the login token).
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // The proxy holds each request body in memory; uploads can be up to
+    // 20 files × 15 MB (the API's limits), so allow that plus form overhead.
+    proxyClientMaxBodySize: "310mb",
+  },
   turbopack: {
     rules: {
       "*.css": {
@@ -13,9 +17,6 @@ const nextConfig: NextConfig = {
         as: "*.css",
       },
     },
-  },
-  rewrites() {
-    return [{ source: "/api/:path*", destination: `${API_URL}/api/:path*` }];
   },
 };
 

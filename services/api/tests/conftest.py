@@ -15,11 +15,13 @@ from fastapi.testclient import TestClient
 from sqlalchemy import update
 from sqlalchemy.orm import Session
 
+from app.auth import get_current_user
 from app.db import check_database, engine, get_session
 from app.main import app
 from app.models import Job, JobStatus
 from app.storage import LocalStorage, get_storage
 from app.worker import process_next_job
+from factories import TEST_USER
 from fakes import FakeExtractor
 
 
@@ -51,9 +53,11 @@ def storage(tmp_path: Path) -> LocalStorage:
 
 @pytest.fixture
 def client(session: Session, storage: LocalStorage) -> Iterator[TestClient]:
-    """An API client that uses the test session and temporary storage."""
+    """An API client that uses the test session and temporary storage, signed in
+    as TEST_USER."""
     app.dependency_overrides[get_session] = lambda: session
     app.dependency_overrides[get_storage] = lambda: storage
+    app.dependency_overrides[get_current_user] = lambda: TEST_USER
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()

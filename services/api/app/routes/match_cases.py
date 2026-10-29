@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 
+from app.auth import CurrentUserDep
 from app.db import SessionDep
 from app.models import MatchCase, MatchStatus
 from app.schemas.match import DecisionRequest, MatchCaseDetail, MatchCaseOut
@@ -49,7 +50,7 @@ def get_match_case(session: SessionDep, case_id: int) -> MatchCaseDetail:
 
 @router.post("/{case_id}/decision")
 def decide_match_case(
-    session: SessionDep, case_id: int, request: DecisionRequest
+    session: SessionDep, user: CurrentUserDep, case_id: int, request: DecisionRequest
 ) -> MatchCaseOut:
     """Approve (OK to pay), reject, or reopen. A note is needed for rejections and
     for approving an invoice that has problems."""
@@ -58,7 +59,7 @@ def decide_match_case(
     if case is None:
         raise HTTPException(404, "Match case not found.")
     try:
-        decide(session, case, request.decision, request.reviewer, request.note)
+        decide(session, case, request.decision, user.actor, request.note)
     except ReviewNotAllowedError as error:
         raise HTTPException(409, str(error)) from error
     except NoteRequiredError as error:
