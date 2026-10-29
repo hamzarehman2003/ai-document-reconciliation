@@ -4,6 +4,7 @@
 # Downloaded and generated datasets (large, can be recreated)
 data/raw/
 data/generated/
+data/eval/
 
 # Files uploaded through the app
 data/uploads/

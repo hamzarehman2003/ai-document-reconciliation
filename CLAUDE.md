@@ -75,6 +75,13 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - `app/services/dashboard.py`: every number is a SQL aggregate (count/sum/group by), never a Python loop over rows.
   Money is always grouped per currency, never added across currencies.
 - Dashboard tests compare numbers before and after adding known data, because the dev database isn't empty.
+
+## Evaluation
+- `python -m app.evaluation` (from services/api) runs the real pipeline on the generated `test` split, scores it
+  against `truth.json` and writes `docs/evaluation.md` (committed) and `data/eval/results.json` (git-ignored).
+- Gemini answers are cached in `data/eval/cache/` and reused from the `extractions` table, so re-runs are free;
+  `--no-ai` uses cached answers only.
+- Never quote accuracy numbers anywhere (README, video, messages) that aren't in the latest `docs/evaluation.md`.
 - Tolerances are settings (`price_tolerance_percent`, `quantity_tolerance_percent`, `amount_tolerance`).
   After changing rules or tolerances: `POST /api/match-cases/refresh`.
 - Type hints on all functions. Use Pydantic models for data shapes.
@@ -106,6 +113,7 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Web: from `apps/web`, `npm run dev` (port 3001; `/api/*` is forwarded to the API on 8001)
 - Ports 3000 and 8000 are taken by the user's other Docker project (Grafana, inference API). Don't use them.
 - Demo dataset: `venv/Scripts/python -m scripts.generate_dataset --sets 50 --seed 42` → `data/generated/` (git-ignored)
+- Accuracy report: from `services/api`, `../../venv/Scripts/python -m app.evaluation` → `docs/evaluation.md`
 - Python checks: `venv/Scripts/ruff format services scripts`, `venv/Scripts/ruff check services scripts`, `venv/Scripts/python -m pytest`
 - Web checks: from `apps/web`, `npm run lint` and `npx tsc --noEmit`
 

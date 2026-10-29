@@ -6,7 +6,7 @@ reason, and exports only approved records.
 
 > Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API,
 > background worker, AI extraction, OCR + click-to-highlight evidence, 3-way matching, human review (approve/reject,
-> corrections) with an audit log, simple upload page.
+> corrections) with an audit log, export and dashboard API, accuracy report, simple upload page.
 
 ## API
 
@@ -63,6 +63,24 @@ correction is kept even if the AI reads the document again, and the match is re-
 numbers and dates, frozen header, filters) or CSV, ready for an accounting system; invoices approved despite a
 problem keep its code in the export. The dashboard endpoint gives the match rate (share of invoices that needed no
 human), money at risk per currency, the most common problems and AI usage, all computed by the database.
+
+## Measured accuracy
+
+On 15 held-back generated sets (45 documents, 11 of them scans with no text layer), never used for tuning,
+running the full pipeline (Gemini Flash-Lite → evidence → matching rules):
+
+| What | Result |
+|---|---|
+| Document type (invoice / purchase order / goods receipt) | 100% (45/45) |
+| Header fields read exactly right | 99.7% (344/345) |
+| Line items found / line values right | 100% (270/270) / 100% (720/720) |
+| Values located on the page for highlighting | 100% (digital and scanned) |
+| 3-way match: sets with exactly the injected problems | 100% (15/15), no missed problems, no false alarms |
+| AI time per document | median 4.2 s (95th percentile 9.6 s) |
+
+The one mistake: an invoice dated `04/03/2026` in US format (3 April) was read as 4 March. Full details,
+every mistake and the limits of the test are in [docs/evaluation.md](docs/evaluation.md). Reproduce with
+`python -m app.evaluation` (from `services/api`).
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui
