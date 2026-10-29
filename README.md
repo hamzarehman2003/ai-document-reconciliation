@@ -28,6 +28,8 @@ Interactive docs: http://localhost:8001/docs
 | POST | `/api/match-cases/{id}/decision` | Approve (OK to pay), reject or reopen, with a note |
 | PATCH | `/api/documents/{id}/fields` | Correct a value the AI misread; the 3-way match is checked again |
 | GET | `/api/audit-events?document_id=…` | Everything that happened to a document and its match, and who did it |
+| GET | `/api/exports/approved.xlsx` (or `.csv`) | Approved invoices for the accounting system; filters `date_from`, `date_to`, `vendor` |
+| GET | `/api/dashboard` | Documents, match rate, money at risk per currency, top problems, AI usage, 14-day activity |
 
 Uploads are processed by a separate **worker** process that takes jobs from a Postgres-backed queue
 (`SELECT … FOR UPDATE SKIP LOCKED`), retries temporary failures with backoff (30 s, 60 s, 120 s) and marks
@@ -56,6 +58,11 @@ and a note when the invoice has problems ("2 extra boxes arrive on Monday"). If 
 decision, the decision is reset so nobody approves something they didn't see. Misread values can be corrected; the
 correction is kept even if the AI reads the document again, and the match is re-checked automatically. Every action
 (upload, AI read, correction, status change, approval) is written to an **audit log** with who did it and when.
+
+**Export and dashboard:** approved invoices download as Excel (an Invoices sheet and a Line items sheet, real
+numbers and dates, frozen header, filters) or CSV, ready for an accounting system; invoices approved despite a
+problem keep its code in the export. The dashboard endpoint gives the match rate (share of invoices that needed no
+human), money at risk per currency, the most common problems and AI usage, all computed by the database.
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

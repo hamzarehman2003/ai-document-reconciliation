@@ -1,5 +1,6 @@
 """Build ready-made test documents straight in the database (no upload, no AI)."""
 
+from datetime import date
 from decimal import Decimal
 from uuid import uuid4
 
@@ -8,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.models import Batch, Document, DocumentStatus, DocumentType, LineItem
 
 VENDOR = "Apex Office Supplies"
+ISSUE_DATE = date(2026, 3, 2)
 
 
 def unique(prefix: str) -> str:
@@ -24,8 +26,9 @@ def add_document(
     po_reference: str | None = None,
     vendor: str = VENDOR,
     line_total: str | None = None,
+    issue_date: date = ISSUE_DATE,
 ) -> Document:
-    """A processed document with one line: SKU A-1 at 5.00 each."""
+    """A processed document in EUR with one line: SKU A-1 at 5.00 each."""
     quantity_value = Decimal(quantity)
     total = Decimal(line_total) if line_total else quantity_value * Decimal("5.00")
     document = Document(
@@ -40,6 +43,8 @@ def add_document(
         document_number=number,
         vendor_name=vendor,
         po_reference=po_reference,
+        issue_date=issue_date,
+        currency="EUR",
         subtotal=total,
         tax=Decimal("0"),
         total=total,
@@ -60,12 +65,18 @@ def add_document(
 
 
 def add_three_way_set(
-    session: Session, *, ordered: str, received: str, billed: str
+    session: Session,
+    *,
+    ordered: str,
+    received: str,
+    billed: str,
+    vendor: str = VENDOR,
+    issue_date: date = ISSUE_DATE,
 ) -> tuple[Document, Document, Document]:
     """A purchase order, its goods receipt and its invoice: (po, receipt, invoice)."""
     po_number = unique("PO")
     order = add_document(
-        session, DocumentType.PURCHASE_ORDER, po_number, quantity=ordered
+        session, DocumentType.PURCHASE_ORDER, po_number, quantity=ordered, vendor=vendor
     )
     receipt = add_document(
         session,
@@ -73,6 +84,7 @@ def add_three_way_set(
         unique("GRN"),
         quantity=received,
         po_reference=po_number,
+        vendor=vendor,
     )
     invoice = add_document(
         session,
@@ -80,5 +92,7 @@ def add_three_way_set(
         unique("INV"),
         quantity=billed,
         po_reference=po_number,
+        vendor=vendor,
+        issue_date=issue_date,
     )
     return order, receipt, invoice

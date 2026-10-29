@@ -21,6 +21,7 @@ class AuditAction(StrEnum):
     CASE_REJECTED = "case_rejected"
     CASE_REOPENED = "case_reopened"
     DECISION_RESET = "decision_reset"
+    CASE_EXPORTED = "case_exported"
 
 
 class AuditObject(StrEnum):

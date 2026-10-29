@@ -68,6 +68,13 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Every user or system action writes an `AuditEvent` with `app/services/audit.py` `record()`, in the same transaction
   as the action. No login yet: the reviewer's name comes with the request (default "Demo reviewer").
 - Shared test helpers: `tests/factories.py` (`add_document`, `add_three_way_set`); fixtures `empty_queue`, `run_jobs`.
+
+## Export and dashboard
+- `app/services/export.py`: only approved cases are exported; Excel via openpyxl (columns defined once in
+  `INVOICE_COLUMNS` / `LINE_COLUMNS`), CSV as UTF-8 with BOM. Each export writes a `case_exported` audit event.
+- `app/services/dashboard.py`: every number is a SQL aggregate (count/sum/group by), never a Python loop over rows.
+  Money is always grouped per currency, never added across currencies.
+- Dashboard tests compare numbers before and after adding known data, because the dev database isn't empty.
 - Tolerances are settings (`price_tolerance_percent`, `quantity_tolerance_percent`, `amount_tolerance`).
   After changing rules or tolerances: `POST /api/match-cases/refresh`.
 - Type hints on all functions. Use Pydantic models for data shapes.
