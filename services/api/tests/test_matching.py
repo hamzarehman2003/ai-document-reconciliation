@@ -1,6 +1,4 @@
 from collections.abc import Callable
-from decimal import Decimal
-from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -8,69 +6,18 @@ from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.models import (
-    Batch,
     Document,
     DocumentStatus,
     DocumentType,
     Job,
     JobStatus,
-    LineItem,
     MatchStatus,
 )
 from app.services import matching
 from app.services.matching import MATCH_DOCUMENT_JOB, update_matches
+from factories import add_document, unique
 
-VENDOR = "Apex Office Supplies"
 PDF = "application/pdf"
-
-
-def unique(prefix: str) -> str:
-    """Document numbers that can't clash with documents in the dev database."""
-    return f"{prefix}-{uuid4().hex[:8].upper()}"
-
-
-def add_document(
-    session: Session,
-    doc_type: DocumentType,
-    number: str,
-    *,
-    quantity: str,
-    po_reference: str | None = None,
-    vendor: str = VENDOR,
-    line_total: str | None = None,
-) -> Document:
-    """A processed document with one line: SKU A-1 at 5.00 each."""
-    quantity_value = Decimal(quantity)
-    total = Decimal(line_total) if line_total else quantity_value * Decimal("5.00")
-    document = Document(
-        batch=Batch(name="Test"),
-        filename=f"{number}.pdf",
-        content_type=PDF,
-        size_bytes=1,
-        checksum=uuid4().hex,
-        storage_key="x",
-        status=DocumentStatus.PROCESSED,
-        doc_type=doc_type,
-        document_number=number,
-        vendor_name=vendor,
-        po_reference=po_reference,
-        subtotal=total,
-        tax=Decimal("0"),
-        total=total,
-        line_items=[
-            LineItem(
-                position=1,
-                sku="A-1",
-                description="Copy paper",
-                quantity=quantity_value,
-                unit_price=Decimal("5.00"),
-                line_total=total,
-            )
-        ],
-    )
-    session.add(document)
-    session.flush()
-    return document
 
 
 def codes(document: Document) -> list[str]:

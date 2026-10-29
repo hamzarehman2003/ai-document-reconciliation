@@ -14,7 +14,7 @@ select = ["E", "W", "F", "I", "N", "UP", "B"]
 # services/api/alembic/ is our migrations folder; the "alembic" import is the library.
 known-third-party = ["alembic"]
 # Test helpers in services/api/tests/ imported as plain modules.
-known-first-party = ["fakes"]
+known-first-party = ["fakes", "factories"]
 
 [tool.pytest.ini_options]
 pythonpath = [".", "services/api"]

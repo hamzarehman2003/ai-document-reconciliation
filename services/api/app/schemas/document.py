@@ -7,9 +7,10 @@ precision is lost on the way to the browser.
 from datetime import date, datetime
 from decimal import Decimal
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models import Document, DocumentStatus, DocumentType
+from app.services.audit import DEFAULT_REVIEWER
 
 
 class DocumentOut(BaseModel):
@@ -79,10 +80,33 @@ class EvidenceOut(BaseModel):
     confidence: float | None
 
 
+class CorrectionOut(BaseModel):
+    """A value a person corrected (the latest correction per field is in effect)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    field: str
+    old_value: str | None
+    new_value: str | None
+    corrected_by: str
+    note: str | None
+    created_at: datetime
+
+
+class CorrectionRequest(BaseModel):
+    field: str = Field(examples=["total", "line_items.2.quantity"])
+    value: str | None = Field(
+        default=None, max_length=500, description="Empty means 'not on the document'."
+    )
+    reviewer: str = Field(default=DEFAULT_REVIEWER, min_length=1, max_length=100)
+    note: str | None = Field(default=None, max_length=1000)
+
+
 class DocumentDetail(DocumentOut):
     line_items: list[LineItemOut]
     latest_extraction: ExtractionInfo | None
     evidence: list[EvidenceOut]
+    corrections: list[CorrectionOut]
 
     @classmethod
     def from_document(cls, document: Document) -> "DocumentDetail":
@@ -92,4 +116,5 @@ class DocumentDetail(DocumentOut):
             line_items=[LineItemOut.model_validate(i) for i in document.line_items],
             latest_extraction=ExtractionInfo.model_validate(latest) if latest else None,
             evidence=[EvidenceOut.model_validate(e) for e in document.evidence],
+            corrections=[CorrectionOut.model_validate(c) for c in document.corrections],
         )

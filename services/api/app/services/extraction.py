@@ -15,6 +15,7 @@ from app.llm import get_extractor
 from app.llm.prompt import PROMPT_VERSION
 from app.llm.schema import DocumentExtraction
 from app.models import Document, DocumentType, Extraction, LineItem
+from app.services.corrections import reapply_corrections
 from app.services.pages import prepare_document
 from app.storage import LocalStorage
 
@@ -53,6 +54,7 @@ def extract_document(
             )
         )
     apply_extraction(document, data)
+    reapply_corrections(document)  # people's fixes beat a new AI read
 
 
 def find_cached_extraction(session: Session, checksum: str) -> Extraction | None:

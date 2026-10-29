@@ -58,6 +58,16 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - A change to a document re-checks: invoices with the same number (duplicates, in any order), invoices referring to
   its PO number, and every case that points at it (as PO, receipt, or in a problem's `refs`).
 - `MatchCase.waiting_for` lists missing documents even when the status is `needs_review`.
+
+## Human review and audit log
+- `MatchCase.status` is what the rules found; `review_status` is the person's decision (pending/approved/rejected),
+  made via `app/services/review.py` `decide()`. Approving needs PO + receipt; a note is required to reject or to
+  approve a case with problems. If a re-check changes the result after a decision, it is reset to pending.
+- Corrections go through `app/services/corrections.py` `correct_field()` (typed, validated) and are stored in
+  `field_corrections`; `reapply_corrections()` puts them back after every new AI read. A correction queues a re-match.
+- Every user or system action writes an `AuditEvent` with `app/services/audit.py` `record()`, in the same transaction
+  as the action. No login yet: the reviewer's name comes with the request (default "Demo reviewer").
+- Shared test helpers: `tests/factories.py` (`add_document`, `add_three_way_set`); fixtures `empty_queue`, `run_jobs`.
 - Tolerances are settings (`price_tolerance_percent`, `quantity_tolerance_percent`, `amount_tolerance`).
   After changing rules or tolerances: `POST /api/match-cases/refresh`.
 - Type hints on all functions. Use Pydantic models for data shapes.

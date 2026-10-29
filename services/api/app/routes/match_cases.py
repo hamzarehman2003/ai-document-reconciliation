@@ -6,8 +6,9 @@ from sqlalchemy.orm import selectinload
 
 from app.db import SessionDep
 from app.models import MatchCase, MatchStatus
-from app.schemas.match import MatchCaseDetail, MatchCaseOut
+from app.schemas.match import DecisionRequest, MatchCaseDetail, MatchCaseOut
 from app.services.matching import lock_matching, match_all
+from app.services.review import NoteRequiredError, ReviewNotAllowedError, decide
 
 router = APIRouter(prefix="/api/match-cases", tags=["match cases"])
 
@@ -44,6 +45,27 @@ def get_match_case(session: SessionDep, case_id: int) -> MatchCaseDetail:
     if case is None:
         raise HTTPException(404, "Match case not found.")
     return MatchCaseDetail.from_case(case)
+
+
+@router.post("/{case_id}/decision")
+def decide_match_case(
+    session: SessionDep, case_id: int, request: DecisionRequest
+) -> MatchCaseOut:
+    """Approve (OK to pay), reject, or reopen. A note is needed for rejections and
+    for approving an invoice that has problems."""
+    lock_matching(session)  # the case can't be re-checked halfway through a decision
+    case = session.get(MatchCase, case_id)
+    if case is None:
+        raise HTTPException(404, "Match case not found.")
+    try:
+        decide(session, case, request.decision, request.reviewer, request.note)
+    except ReviewNotAllowedError as error:
+        raise HTTPException(409, str(error)) from error
+    except NoteRequiredError as error:
+        raise HTTPException(422, str(error)) from error
+    session.commit()
+    session.refresh(case)
+    return MatchCaseOut.from_case(case)
 
 
 @router.post("/refresh")

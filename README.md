@@ -5,7 +5,8 @@ The AI extracts the data, the app matches the three documents, flags every misma
 reason, and exports only approved records.
 
 > Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API,
-> background worker, AI extraction, OCR + click-to-highlight evidence, 3-way matching, simple upload page.
+> background worker, AI extraction, OCR + click-to-highlight evidence, 3-way matching, human review (approve/reject,
+> corrections) with an audit log, simple upload page.
 
 ## API
 
@@ -24,6 +25,9 @@ Interactive docs: http://localhost:8001/docs
 | GET | `/api/match-cases?status=…&invoice_id=…` | 3-way match cases (one per invoice) with the problems found |
 | GET | `/api/match-cases/{id}` | One case with its invoice, purchase order and goods receipt |
 | POST | `/api/match-cases/refresh` | Check every invoice again (after changing rules or tolerances) |
+| POST | `/api/match-cases/{id}/decision` | Approve (OK to pay), reject or reopen, with a note |
+| PATCH | `/api/documents/{id}/fields` | Correct a value the AI misread; the 3-way match is checked again |
+| GET | `/api/audit-events?document_id=…` | Everything that happened to a document and its match, and who did it |
 
 Uploads are processed by a separate **worker** process that takes jobs from a Postgres-backed queue
 (`SELECT … FOR UPDATE SKIP LOCKED`), retries temporary failures with backoff (30 s, 60 s, 120 s) and marks
@@ -46,6 +50,12 @@ several goods receipts are added up). Matching runs as its own background job un
 can be processed by several workers at once and in any order. Every problem is
 explained in plain words ("CPF-15: billed 10, but only 8 received") and linked to the values on the page.
 The rules are tested against 300 generated document sets, each of which must get exactly its injected mistake.
+
+**Human review:** a person approves an invoice for payment or rejects it. Approving needs the PO and goods receipt,
+and a note when the invoice has problems ("2 extra boxes arrive on Monday"). If the match result changes after a
+decision, the decision is reset so nobody approves something they didn't see. Misread values can be corrected; the
+correction is kept even if the AI reads the document again, and the match is re-checked automatically. Every action
+(upload, AI read, correction, status change, approval) is written to an **audit log** with who did it and when.
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

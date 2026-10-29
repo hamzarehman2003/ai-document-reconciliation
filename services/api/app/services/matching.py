@@ -14,15 +14,20 @@ from sqlalchemy.orm import InstrumentedAttribute, Session
 
 from app.config import settings
 from app.models import (
+    AuditAction,
+    AuditObject,
     Discrepancy,
     Document,
     DocumentStatus,
     DocumentType,
+    Job,
     MatchCase,
     MatchStatus,
+    ReviewStatus,
 )
 from app.models.match_case import match_case_receipts
 from app.rules import DocumentData, Finding, LineData, Tolerances, check_invoice
+from app.services.audit import SYSTEM, record
 from app.storage import LocalStorage
 
 MATCH_DOCUMENT_JOB = "match_document"
@@ -38,6 +43,11 @@ def run_match_job(
     if document is not None:
         update_matches(session, document)
     session.commit()
+
+
+def queue_matching(session: Session, document: Document) -> None:
+    """Queue a re-check; saved in the same commit as the change that needs it."""
+    session.add(Job(kind=MATCH_DOCUMENT_JOB, payload={"document_id": document.id}))
 
 
 def lock_matching(session: Session) -> None:
@@ -111,7 +121,13 @@ def match_invoice(session: Session, invoice: Document) -> MatchCase:
         ),
     )
 
-    case = invoice.match_case or MatchCase(invoice=invoice)
+    case = invoice.match_case
+    is_new = case is None
+    if case is None:
+        case = MatchCase(invoice=invoice)
+    old_status = None if is_new else case.status
+    old_result = None if is_new else result_key_of_case(case)
+
     case.purchase_order = purchase_order
     case.goods_receipts = receipts
     case.discrepancies = [to_discrepancy(finding) for finding in findings]
@@ -126,7 +142,61 @@ def match_invoice(session: Session, invoice: Document) -> MatchCase:
     case.updated_at = func.now()
     session.add(case)
     session.flush()
+
+    result_changed = old_result != result_key(purchase_order, receipts, findings)
+    if not is_new and result_changed and case.review_status is not ReviewStatus.PENDING:
+        reset_decision(session, case)
+    if case.status != old_status:
+        record(
+            session,
+            SYSTEM,
+            AuditAction.MATCH_STATUS_CHANGED,
+            AuditObject.MATCH_CASE,
+            case.id,
+            {"from": old_status.value if old_status else None, "to": case.status.value},
+        )
     return case
+
+
+def reset_decision(session: Session, case: MatchCase) -> None:
+    """The match changed after a decision: the person must look again."""
+    record(
+        session,
+        SYSTEM,
+        AuditAction.DECISION_RESET,
+        AuditObject.MATCH_CASE,
+        case.id,
+        {
+            "previous_decision": case.review_status.value,
+            "reason": "The 3-way match result changed after the decision.",
+        },
+    )
+    case.review_status = ReviewStatus.PENDING
+    case.reviewed_by = None
+    case.reviewed_at = None
+    case.review_note = None
+
+
+ResultKey = tuple[int | None, tuple[int, ...], tuple[tuple[str, str], ...]]
+
+
+def result_key(
+    purchase_order: Document | None, receipts: list[Document], findings: list[Finding]
+) -> ResultKey:
+    """What a reviewer saw: the linked documents and the problems."""
+    return (
+        purchase_order.id if purchase_order else None,
+        tuple(receipt.id for receipt in receipts),
+        tuple(sorted((f.code.value, f.message) for f in findings)),
+    )
+
+
+def result_key_of_case(case: MatchCase) -> ResultKey:
+    return (
+        case.purchase_order_id,
+        tuple(receipt.id for receipt in case.goods_receipts),
+        tuple(sorted((d.code.value, d.message) for d in case.discrepancies)),
+    )
 
 
 def find_purchase_order(session: Session, po_number: str | None) -> Document | None:

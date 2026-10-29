@@ -8,8 +8,9 @@ from pathlib import PurePath
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Batch, Document, Job
+from app.models import AuditAction, AuditObject, Batch, Document, Job
 from app.schemas.batch import UploadOutcome, UploadResult
+from app.services.audit import DEFAULT_REVIEWER, record
 from app.storage import LocalStorage
 
 # The first bytes of each allowed file type ("magic numbers").
@@ -129,6 +130,14 @@ def create_batch_from_uploads(
 
             session.add(
                 Job(kind=PROCESS_DOCUMENT_JOB, payload={"document_id": document.id})
+            )
+            record(
+                session,
+                DEFAULT_REVIEWER,
+                AuditAction.DOCUMENT_UPLOADED,
+                AuditObject.DOCUMENT,
+                document.id,
+                {"filename": document.filename, "batch_id": batch.id},
             )
             result.document_id = document.id
         session.commit()

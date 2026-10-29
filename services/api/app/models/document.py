@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin, text_enum
 if TYPE_CHECKING:
     from app.models.batch import Batch
     from app.models.extraction import Extraction
+    from app.models.field_correction import FieldCorrection
     from app.models.field_evidence import FieldEvidence
     from app.models.line_item import LineItem
     from app.models.match_case import MatchCase
@@ -85,6 +86,12 @@ class Document(TimestampMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="FieldEvidence.id",
+    )
+    corrections: Mapped[list["FieldCorrection"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="FieldCorrection.id",
     )
     # Only invoices have a match case.
     match_case: Mapped["MatchCase | None"] = relationship(

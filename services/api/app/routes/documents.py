@@ -1,4 +1,4 @@
-"""Look at single documents, download the original file, or process it again."""
+"""Look at single documents, correct their values, or process them again."""
 
 from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
@@ -7,8 +7,10 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionDep
 from app.models import Document, DocumentStatus, Job, JobStatus
-from app.schemas.document import DocumentDetail
+from app.schemas.document import CorrectionRequest, DocumentDetail
 from app.schemas.job import JobOut
+from app.services.corrections import CorrectionError, correct_field
+from app.services.matching import queue_matching
 from app.services.pages import render_page_png
 from app.services.uploads import PROCESS_DOCUMENT_JOB
 from app.storage import StorageDep
@@ -27,6 +29,31 @@ def get_document_or_404(session: Session, document_id: int) -> Document:
 def get_document(session: SessionDep, document_id: int) -> DocumentDetail:
     """A document with the data the AI read from it and its line items."""
     return DocumentDetail.from_document(get_document_or_404(session, document_id))
+
+
+@router.patch("/{document_id}/fields")
+def correct_document_field(
+    session: SessionDep, document_id: int, request: CorrectionRequest
+) -> DocumentDetail:
+    """Correct a value the AI misread. The 3-way match is then checked again."""
+    document = get_document_or_404(session, document_id)
+    if document.status is not DocumentStatus.PROCESSED:
+        raise HTTPException(409, "Wait until the document is processed.")
+    try:
+        correct_field(
+            session,
+            document,
+            request.field,
+            request.value,
+            request.reviewer,
+            request.note,
+        )
+    except CorrectionError as error:
+        raise HTTPException(422, str(error)) from error
+    queue_matching(session, document)
+    session.commit()
+    session.refresh(document)
+    return DocumentDetail.from_document(document)
 
 
 @router.get("/{document_id}/file")

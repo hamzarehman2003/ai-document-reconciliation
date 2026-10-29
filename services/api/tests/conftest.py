@@ -12,10 +12,12 @@ from uuid import uuid4
 import pymupdf
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import update
 from sqlalchemy.orm import Session
 
 from app.db import check_database, engine, get_session
 from app.main import app
+from app.models import Job, JobStatus
 from app.storage import LocalStorage, get_storage
 from app.worker import process_next_job
 from fakes import FakeExtractor
@@ -55,6 +57,19 @@ def client(session: Session, storage: LocalStorage) -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def empty_queue(session: Session) -> None:
+    """Hide jobs from the dev database, so a test only runs its own jobs.
+
+    Happens inside the test transaction, so it is rolled back afterwards.
+    """
+    session.execute(
+        update(Job)
+        .where(Job.status.in_([JobStatus.QUEUED, JobStatus.RUNNING]))
+        .values(status=JobStatus.DONE)
+    )
 
 
 @pytest.fixture

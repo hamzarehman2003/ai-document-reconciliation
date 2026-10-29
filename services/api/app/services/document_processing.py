@@ -17,11 +17,12 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.llm.base import PermanentExtractionError
-from app.models import Document, DocumentStatus, FieldEvidence, Job
+from app.models import AuditAction, AuditObject, Document, DocumentStatus, FieldEvidence
+from app.services.audit import SYSTEM, record
 from app.services.evidence import find_evidence
 from app.services.extraction import extract_document
 from app.services.job_queue import PermanentJobError
-from app.services.matching import MATCH_DOCUMENT_JOB
+from app.services.matching import queue_matching
 from app.services.page_text import read_page_lines
 from app.storage import LocalStorage
 
@@ -51,13 +52,20 @@ def process_document(
         raise PermanentJobError(str(error)) from error
     document.evidence = locate_evidence(document, path)
     document.status = DocumentStatus.PROCESSED
+    record(
+        session,
+        SYSTEM,
+        AuditAction.DOCUMENT_PROCESSED,
+        AuditObject.DOCUMENT,
+        document.id,
+        {
+            "doc_type": document.doc_type.value,
+            "document_number": document.document_number,
+            "values_located": len(document.evidence),
+        },
+    )
     queue_matching(session, document)
     session.commit()
-
-
-def queue_matching(session: Session, document: Document) -> None:
-    """Saved together with the document, so the match always follows it."""
-    session.add(Job(kind=MATCH_DOCUMENT_JOB, payload={"document_id": document.id}))
 
 
 def locate_evidence(document: Document, path: Path) -> list[FieldEvidence]:
@@ -78,6 +86,14 @@ def mark_document_failed(
     if document is not None:
         document.status = DocumentStatus.FAILED
         document.error_message = message
+        record(
+            session,
+            SYSTEM,
+            AuditAction.DOCUMENT_FAILED,
+            AuditObject.DOCUMENT,
+            document.id,
+            {"error": message},
+        )
         queue_matching(session, document)  # cases using it must be re-checked
         session.commit()
 

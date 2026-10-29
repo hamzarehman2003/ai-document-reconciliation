@@ -1,9 +1,10 @@
 """The 3-way match of one invoice with its purchase order and goods receipts."""
 
+from datetime import datetime
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Column, ForeignKey, Table
+from sqlalchemy import Column, DateTime, ForeignKey, String, Table, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, text_enum
@@ -17,6 +18,14 @@ class MatchStatus(StrEnum):
     MATCHED = "matched"  # invoice, PO and receipts agree
     NEEDS_REVIEW = "needs_review"  # at least one problem found
     WAITING = "waiting"  # no problem so far, but the PO or a receipt is missing
+
+
+class ReviewStatus(StrEnum):
+    """The person's decision, separate from what the rules found."""
+
+    PENDING = "pending"
+    APPROVED = "approved"  # OK to pay
+    REJECTED = "rejected"  # do not pay
 
 
 # A delivery can come in several parts, so one case can have several receipts.
@@ -47,6 +56,14 @@ class MatchCase(TimestampMixin, Base):
         ForeignKey("documents.id", ondelete="SET NULL")
     )
     status: Mapped[MatchStatus] = mapped_column(text_enum(MatchStatus))
+    review_status: Mapped[ReviewStatus] = mapped_column(
+        text_enum(ReviewStatus),
+        default=ReviewStatus.PENDING,
+        server_default=ReviewStatus.PENDING.value,
+    )
+    reviewed_by: Mapped[str | None] = mapped_column(String(100))
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)
 
     invoice: Mapped["Document"] = relationship(
         foreign_keys=[invoice_id], back_populates="match_case"

@@ -3,11 +3,19 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
-from app.models import MatchCase, MatchStatus
+from app.models import MatchCase, MatchStatus, ReviewStatus
 from app.rules.types import Code, Severity
 from app.schemas.document import DocumentOut
+from app.services.audit import DEFAULT_REVIEWER
+from app.services.review import Decision
+
+
+class DecisionRequest(BaseModel):
+    decision: Decision
+    note: str | None = Field(default=None, max_length=1000)
+    reviewer: str = Field(default=DEFAULT_REVIEWER, min_length=1, max_length=100)
 
 
 class DiscrepancyOut(BaseModel):
@@ -33,6 +41,10 @@ class MatchCaseOut(BaseModel):
     goods_receipt_ids: list[int]
     # Documents still missing for a full check, even when problems were found.
     waiting_for: list[str]
+    review_status: ReviewStatus
+    reviewed_by: str | None
+    reviewed_at: datetime | None
+    review_note: str | None
     updated_at: datetime
     discrepancies: list[DiscrepancyOut]
 
@@ -48,6 +60,10 @@ class MatchCaseOut(BaseModel):
             purchase_order_id=case.purchase_order_id,
             goods_receipt_ids=[receipt.id for receipt in case.goods_receipts],
             waiting_for=case.waiting_for,
+            review_status=case.review_status,
+            reviewed_by=case.reviewed_by,
+            reviewed_at=case.reviewed_at,
+            review_note=case.review_note,
             updated_at=case.updated_at,
             discrepancies=[
                 DiscrepancyOut.model_validate(d) for d in case.discrepancies
