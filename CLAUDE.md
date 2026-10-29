@@ -67,6 +67,8 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   `field_corrections`; `reapply_corrections()` puts them back after every new AI read. A correction queues a re-match.
 - Every user or system action writes an `AuditEvent` with `app/services/audit.py` `record()`, in the same transaction
   as the action. No login yet: the reviewer's name comes with the request (default "Demo reviewer").
+- The audit API names what each event is about (`subject`, `document_id`) with `describe_subjects()`, batched
+  per request; the event wording for the UI lives in `apps/web/src/lib/audit.ts`.
 - Shared test helpers: `tests/factories.py` (`add_document`, `add_three_way_set`); fixtures `empty_queue`, `run_jobs`.
 
 ## Export and dashboard

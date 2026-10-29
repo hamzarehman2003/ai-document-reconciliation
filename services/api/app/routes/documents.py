@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db import SessionDep
 from app.models import Document, DocumentStatus, Job, JobStatus
-from app.schemas.document import CorrectionRequest, DocumentDetail
+from app.schemas.document import CorrectionRequest, DocumentDetail, DocumentOut
 from app.schemas.job import JobOut
 from app.services.corrections import CorrectionError, correct_field
 from app.services.matching import queue_matching
@@ -23,6 +23,13 @@ def get_document_or_404(session: Session, document_id: int) -> Document:
     if document is None:
         raise HTTPException(404, "Document not found.")
     return document
+
+
+@router.get("")
+def list_documents(session: SessionDep, limit: int = 200) -> list[DocumentOut]:
+    """Newest first, without line items (open one document for those)."""
+    query = select(Document).order_by(Document.id.desc()).limit(min(limit, 500))
+    return [DocumentOut.model_validate(document) for document in session.scalars(query)]
 
 
 @router.get("/{document_id}")

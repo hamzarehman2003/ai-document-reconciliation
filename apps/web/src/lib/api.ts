@@ -183,6 +183,20 @@ export type AuditEvent = {
   object_type: "document" | "match_case";
   object_id: number;
   details: Record<string, unknown>;
+  /** "CPF-84364 · Cedar & Pine Furniture" or the file name; null if it no longer exists. */
+  subject: string | null;
+  /** The document to open for this event (for a match case: its invoice). */
+  document_id: number | null;
+};
+
+/** A document in the list: what the AI read, without line items. */
+export type DocumentRow = DocumentSummary & {
+  document_number: string | null;
+  vendor_name: string | null;
+  issue_date: string | null;
+  currency: string | null;
+  total: string | null;
+  created_at: string;
 };
 
 /** Approve (OK to pay), reject, or reopen. Throws the API's explanation if refused. */
@@ -223,6 +237,16 @@ export async function getMatchCaseForInvoice(invoiceId: number): Promise<MatchCa
 /** Recently checked invoices first (up to 200, enough for the demo). */
 export async function listMatchCases(): Promise<MatchCase[]> {
   return getJson<MatchCase[]>("/api/match-cases?limit=200");
+}
+
+/** Newest first. */
+export async function listDocuments(): Promise<DocumentRow[]> {
+  return getJson<DocumentRow[]>("/api/documents?limit=500");
+}
+
+/** The activity log, newest first. */
+export async function listAuditEvents(): Promise<AuditEvent[]> {
+  return getJson<AuditEvent[]>("/api/audit-events?limit=300");
 }
 
 export async function getDashboard(): Promise<Dashboard> {

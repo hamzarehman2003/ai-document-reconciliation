@@ -14,6 +14,7 @@ import {
   type AuditEvent,
   type MatchCase,
 } from "@/lib/api";
+import { describe } from "@/lib/audit";
 import { cn } from "@/lib/utils";
 
 const POLL_MS = 3000;
@@ -24,12 +25,6 @@ const MISSING_LABELS = {
   purchase_order: "the purchase order",
   goods_receipt: "the goods receipt",
 } as const;
-
-const STATUS_LABELS: Record<string, string> = {
-  matched: "matched",
-  needs_review: "needs review",
-  waiting: "waiting for documents",
-};
 
 type Props = {
   invoiceId: number;
@@ -262,32 +257,6 @@ function History({ events }: { events: AuditEvent[] }) {
       </ol>
     </details>
   );
-}
-
-function describe(event: AuditEvent): string {
-  const details = event.details;
-  switch (event.action) {
-    case "document_uploaded":
-      return "Uploaded";
-    case "document_processed":
-      return "Read by AI";
-    case "document_failed":
-      return `Processing failed: ${String(details.error ?? "")}`;
-    case "field_corrected":
-      return `Corrected ${String(details.field)}: ${String(details.old ?? "empty")} → ${String(details.new ?? "empty")}`;
-    case "match_status_changed":
-      return `3-way match: ${STATUS_LABELS[String(details.to)] ?? String(details.to)}`;
-    case "case_approved":
-      return "Approved for payment";
-    case "case_rejected":
-      return "Rejected";
-    case "case_reopened":
-      return "Reopened";
-    case "decision_reset":
-      return "Decision reset: the match result changed";
-    default:
-      return event.action;
-  }
 }
 
 function formatTime(value: string): string {

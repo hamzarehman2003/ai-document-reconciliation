@@ -54,3 +54,26 @@ def test_filter_by_object(client: TestClient, session: Session) -> None:
     ]
     assert events[0]["actor"] == "Sara (AP team)"
     assert events[1]["details"] == {"from": None, "to": "matched"}
+
+
+def test_events_name_the_invoice_they_are_about(
+    client: TestClient, session: Session
+) -> None:
+    _, _, invoice = add_three_way_set(session, ordered="10", received="8", billed="8")
+    update_matches(session, invoice)
+    client.patch(
+        f"/api/documents/{invoice.id}/fields",
+        json={"field": "due_date", "value": "2026-04-01"},
+    )
+    client.post(
+        f"/api/match-cases/{invoice.match_case.id}/decision",
+        json={"decision": "approve"},
+    )
+
+    events = client.get("/api/audit-events", params={"document_id": invoice.id}).json()
+
+    by_action = {event["action"]: event for event in events}
+    expected = f"{invoice.document_number} · Apex Office Supplies"
+    for action in ("field_corrected", "case_approved"):  # a document and a case event
+        assert by_action[action]["subject"] == expected
+        assert by_action[action]["document_id"] == invoice.id

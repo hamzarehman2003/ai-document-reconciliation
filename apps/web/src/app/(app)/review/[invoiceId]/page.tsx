@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 
-import { InvoiceWorkspace } from "@/components/review/invoice-workspace";
+import { DocumentWorkspace } from "@/components/document-workspace";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = { title: "Invoice" };
@@ -18,5 +18,11 @@ export default function InvoicePage({ params }: PageProps<"/review/[invoiceId]">
 
 async function Invoice({ params }: { params: Promise<{ invoiceId: string }> }) {
   const { invoiceId } = await params;
-  return <InvoiceWorkspace invoiceId={Number(invoiceId)} />;
+  return (
+    <DocumentWorkspace
+      documentId={Number(invoiceId)}
+      backHref="/review"
+      backLabel="Review queue"
+    />
+  );
 }

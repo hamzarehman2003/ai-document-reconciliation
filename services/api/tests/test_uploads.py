@@ -192,3 +192,16 @@ def test_unknown_ids_return_404(client: TestClient) -> None:
     assert client.get("/api/batches/999999").status_code == 404
     assert client.get("/api/documents/999999").status_code == 404
     assert client.get("/api/documents/999999/file").status_code == 404
+
+
+def test_list_documents_newest_first(
+    client: TestClient, make_pdf: Callable[[], bytes]
+) -> None:
+    first = upload(client, ("first.pdf", make_pdf(), PDF))["body"]
+    second = upload(client, ("second.pdf", make_pdf(), PDF))["body"]
+
+    listed = client.get("/api/documents", params={"limit": 2}).json()
+
+    assert [document["filename"] for document in listed] == ["second.pdf", "first.pdf"]
+    assert listed[0]["id"] == second["results"][0]["document_id"]
+    assert listed[1]["id"] == first["results"][0]["document_id"]

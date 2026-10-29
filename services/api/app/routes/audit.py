@@ -6,6 +6,7 @@ from sqlalchemy import and_, or_, select
 from app.db import SessionDep
 from app.models import AuditEvent, AuditObject, MatchCase
 from app.schemas.audit import AuditEventOut
+from app.services.audit import describe_subjects
 
 router = APIRouter(prefix="/api/audit-events", tags=["audit log"])
 
@@ -39,4 +40,11 @@ def list_audit_events(
                 ),
             )
         )
-    return [AuditEventOut.model_validate(event) for event in session.scalars(query)]
+    events = list(session.scalars(query))
+    subjects = describe_subjects(session, events)
+    return [
+        AuditEventOut.from_event(
+            event, subjects.get((event.object_type, event.object_id))
+        )
+        for event in events
+    ]

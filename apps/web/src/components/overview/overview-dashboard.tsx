@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Inbox } from "lucide-react";
 
 import { EmptyState } from "@/components/ledger/empty-state";
+import { MoneyTile } from "@/components/ledger/money-tile";
 import { StatTile } from "@/components/ledger/stat-tile";
 import { DailyChart } from "@/components/overview/daily-chart";
 import { TopProblems } from "@/components/overview/top-problems";
@@ -15,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   getDashboard,
   listMatchCases,
-  type AmountByCurrency,
   type Dashboard,
   type MatchCase,
 } from "@/lib/api";
@@ -72,7 +72,12 @@ export function OverviewDashboard() {
           tone={pending > 0 ? "warning" : "default"}
           detail={`${withProblems} with problems`}
         />
-        <MoneyTile label="Money at risk" amounts={dashboard.money_at_risk} />
+        <MoneyTile
+          label="Money at risk"
+          amounts={dashboard.money_at_risk}
+          tone="danger"
+          emptyDetail="No open problems"
+        />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -135,27 +140,6 @@ export function OverviewDashboard() {
         </CardFooter>
       </Card>
     </div>
-  );
-}
-
-/** Money is never added across currencies: the largest one big, the others underneath. */
-function MoneyTile({ label, amounts }: { label: string; amounts: AmountByCurrency[] }) {
-  const [first, ...others] = [...amounts].sort((a, b) => b.invoices - a.invoices);
-  if (!first) {
-    return <StatTile label={label} value={formatMoney("0", null)} detail="No open problems" />;
-  }
-  const invoices = amounts.reduce((sum, item) => sum + item.invoices, 0);
-  return (
-    <StatTile
-      label={label}
-      value={formatMoney(first.amount, first.currency)}
-      tone="danger"
-      detail={
-        others.length > 0
-          ? `and ${others.map((item) => formatMoney(item.amount, item.currency)).join(", ")} · ${invoices} invoices`
-          : `${invoices} invoice${invoices === 1 ? "" : "s"}`
-      }
-    />
   );
 }
 
