@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ExternalLink, Loader2, TriangleAlert } from "lucide-react";
+import { ExternalLink, TriangleAlert } from "lucide-react";
 
 import { EditableValue } from "@/components/editable-value";
+import { Stamp } from "@/components/ledger/stamp";
+import { DocumentStatusStamp } from "@/components/ledger/status-stamps";
 import { MatchPanel } from "@/components/match-panel";
 import { PageViewer } from "@/components/page-viewer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,11 +46,9 @@ export function DocumentCard({ document }: { document: DocumentDetail }) {
     <Card>
       <CardHeader>
         <CardTitle className="truncate">{document.filename}</CardTitle>
-        <CardDescription className="flex flex-wrap items-center gap-2">
-          <StatusBadge status={document.status} />
-          {document.status === "processed" && (
-            <Badge variant="outline">{DOC_TYPE_LABELS[document.doc_type]}</Badge>
-          )}
+        <CardDescription className="flex flex-wrap items-center gap-2 pt-1">
+          <DocumentStatusStamp status={document.status} />
+          {document.status === "processed" && <Stamp>{DOC_TYPE_LABELS[document.doc_type]}</Stamp>}
         </CardDescription>
         <CardAction>
           <Button variant="outline" size="sm" asChild>
@@ -82,25 +81,6 @@ export function DocumentCard({ document }: { document: DocumentDetail }) {
         </CardFooter>
       )}
     </Card>
-  );
-}
-
-function StatusBadge({ status }: { status: DocumentDetail["status"] }) {
-  if (status === "processed") {
-    return (
-      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-        Extracted
-      </Badge>
-    );
-  }
-  if (status === "failed") {
-    return <Badge variant="destructive">Failed</Badge>;
-  }
-  return (
-    <Badge variant="secondary">
-      <Loader2 className="animate-spin" />
-      {status === "uploaded" ? "Waiting" : "Reading with AI"}
-    </Badge>
   );
 }
 
@@ -233,10 +213,10 @@ function ExtractedData({ document: initial }: { document: DocumentDetail }) {
                   onClick={() => select(row)}
                   className={cn(
                     "cursor-pointer",
-                    selected === row && "bg-amber-100/60 dark:bg-amber-500/15",
+                    selected === row && "bg-warning/10 hover:bg-warning/15",
                   )}
                 >
-                  <TableCell className="font-mono text-xs">
+                  <TableCell className="numeric text-xs text-muted-foreground">
                     <span className="inline-flex items-center gap-1">
                       {orDash(item.sku)}
                       {!located.has(`${row}.sku`) && <MissingMark />}
@@ -331,8 +311,8 @@ function Selectable({
         }
       }}
       className={cn(
-        "cursor-pointer text-left transition-colors hover:bg-muted",
-        active && "border-amber-500 bg-amber-100/60 dark:bg-amber-500/15",
+        "cursor-pointer text-left transition-colors hover:bg-accent/60",
+        active && "border-warning/60 bg-warning/10 hover:bg-warning/15",
         className,
       )}
     >
@@ -343,7 +323,7 @@ function Selectable({
 
 function MissingMark() {
   return (
-    <span title="Not found on the page: check this value" className="text-amber-600">
+    <span title="Not found on the page: check this value" className="text-warning">
       <TriangleAlert className="size-3.5" />
     </span>
   );

@@ -3,8 +3,8 @@
 import { useState } from "react";
 
 import { DocumentResults } from "@/components/document-results";
+import { Stamp } from "@/components/ledger/stamp";
 import { UploadForm } from "@/components/upload-form";
-import { Badge } from "@/components/ui/badge";
 import type { UploadResponse, UploadResult } from "@/lib/api";
 
 /** Upload on top, then what happened to each file, then the extracted data. */
@@ -27,10 +27,10 @@ export function UploadWorkspace() {
       <UploadForm onUploaded={handleUploaded} />
 
       {results.length > 0 && (
-        <ul className="flex flex-col gap-2 rounded-lg border bg-card p-4 text-sm">
+        <ul className="flex flex-col gap-2.5 rounded-lg border bg-card p-4 text-sm shadow-paper">
           {results.map((result, index) => (
             <li key={index} className="flex flex-wrap items-center gap-2">
-              <OutcomeBadge outcome={result.outcome} />
+              <OutcomeStamp outcome={result.outcome} />
               <span className="font-medium">{result.filename}</span>
               {result.detail && <span className="text-muted-foreground">{result.detail}</span>}
             </li>
@@ -43,14 +43,12 @@ export function UploadWorkspace() {
   );
 }
 
-function OutcomeBadge({ outcome }: { outcome: UploadResult["outcome"] }) {
+function OutcomeStamp({ outcome }: { outcome: UploadResult["outcome"] }) {
   if (outcome === "accepted") {
-    return (
-      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">Accepted</Badge>
-    );
+    return <Stamp tone="success">Accepted</Stamp>;
   }
   if (outcome === "duplicate") {
-    return <Badge variant="secondary">Already uploaded</Badge>;
+    return <Stamp>Already uploaded</Stamp>;
   }
-  return <Badge variant="destructive">Rejected</Badge>;
+  return <Stamp tone="danger">Rejected</Stamp>;
 }

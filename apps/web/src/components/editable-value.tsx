@@ -89,11 +89,11 @@ export function EditableValue({
 
   return (
     <span className={cn("group inline-flex items-center gap-1", className)}>
-      <span className="font-mono">{display}</span>
+      <span className="numeric">{display}</span>
       {correction && (
         <span
           title={`Corrected by ${correction.corrected_by}. The AI read: ${correction.old_value ?? "nothing"}`}
-          className="rounded bg-sky-500/10 px-1 text-[10px] font-medium text-sky-700 dark:text-sky-400"
+          className="rounded-sm bg-primary/10 px-1 text-[0.625rem] font-medium tracking-wide text-primary uppercase"
         >
           corrected
         </span>

@@ -124,6 +124,17 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Use shadcn/ui components before writing custom ones. Keep components small.
 - No `any` types. Use realistic demo data, never lorem ipsum.
 
+## Design system ("Ledger")
+- Colours are tokens in `apps/web/src/app/globals.css` (light `:root` and `.dark`). Never hard-code
+  Tailwind palette colours (emerald, amber, sky…); use `primary`, `success`, `warning`, `destructive`,
+  `muted`, `accent`.
+- Fonts: `font-heading` (Fraunces) only for page titles and big numbers; Plex Sans for UI;
+  `numeric` utility (Plex Mono, tabular) for amounts, IDs, SKUs and dates. `eyebrow` for small-caps labels.
+- Pages live in `src/app/(app)/` (shared sidebar + header shell); new pages also go in `src/lib/navigation.ts`.
+- Every page starts with `PageHeader`. Statuses use `Stamp` / `status-stamps.tsx` (not `Badge`), key numbers
+  use `StatTile`, empty lists use `EmptyState` (all in `src/components/ledger/`).
+- `/design` shows every component; add new shared components there.
+
 ## Stack (from spec)
 - Backend: FastAPI, SQLAlchemy 2, Alembic, PostgreSQL; a worker process using a Postgres job table (no Redis/Celery).
 - PDF: PyMuPDF. OCR fallback: RapidOCR or Tesseract (CPU only).

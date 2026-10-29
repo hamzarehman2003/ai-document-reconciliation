@@ -83,7 +83,9 @@ every mistake and the limits of the test are in [docs/evaluation.md](docs/evalua
 `python -m app.evaluation` (from `services/api`).
 
 ## Tech stack
-- **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui
+- **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui, with a custom "Ledger" look (warm paper, ink,
+  one forest-green accent; Fraunces, IBM Plex Sans and Plex Mono), light and dark mode, a ⌘K/Ctrl+K menu.
+  All components are shown at `/design`.
 - **API:** Python, FastAPI, SQLAlchemy
 - **Database:** PostgreSQL (Docker)
 - **AI:** Google Gemini

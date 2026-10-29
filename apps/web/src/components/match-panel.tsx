@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CircleAlert, CircleCheck, Clock, TriangleAlert } from "lucide-react";
+import { CircleAlert, Clock, TriangleAlert } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Stamp } from "@/components/ledger/stamp";
+import { MatchStamp } from "@/components/ledger/status-stamps";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -100,10 +101,10 @@ export function MatchPanel({ invoiceId, onSelectField, refreshKey }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-lg border p-4">
+    <div className="flex flex-col gap-3 rounded-lg border bg-muted/30 p-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <span className="text-sm font-medium">3-way match</span>
-        <StatusBadge matchCase={matchCase} />
+        <span className="eyebrow">3-way match</span>
+        <MatchCaseStamp matchCase={matchCase} />
       </div>
 
       {matchCase.waiting_for.length > 0 && (
@@ -135,18 +136,18 @@ export function MatchPanel({ invoiceId, onSelectField, refreshKey }: Props) {
                   disabled={!onThisInvoice}
                   onClick={() => onThisInvoice && onSelectField(onThisInvoice.field)}
                   className={cn(
-                    "flex w-full items-start gap-2 rounded-md p-2 text-left text-sm",
-                    onThisInvoice && "hover:bg-muted",
+                    "flex w-full items-start gap-2 rounded-md p-2 text-left text-sm transition-colors",
+                    onThisInvoice && "hover:bg-accent",
                   )}
                 >
                   {problem.severity === "error" ? (
                     <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" />
                   ) : (
-                    <TriangleAlert className="mt-0.5 size-4 shrink-0 text-amber-600" />
+                    <TriangleAlert className="mt-0.5 size-4 shrink-0 text-warning" />
                   )}
                   <span>
                     {problem.message}
-                    <span className="block font-mono text-xs text-muted-foreground">
+                    <span className="mt-0.5 block font-mono text-[0.6875rem] tracking-wide text-muted-foreground">
                       {problem.code}
                     </span>
                   </span>
@@ -192,15 +193,9 @@ function ReviewControls({
     return (
       <div className="flex flex-col gap-2 border-t pt-3 text-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <Badge
-            className={
-              approved
-                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                : "bg-destructive/10 text-destructive"
-            }
-          >
+          <Stamp tone={approved ? "success" : "danger"}>
             {approved ? "Approved for payment" : "Rejected"}
-          </Badge>
+          </Stamp>
           <Button size="sm" variant="outline" onClick={() => send("reopen")} disabled={busy}>
             Reopen
           </Button>
@@ -255,7 +250,7 @@ function History({ events }: { events: AuditEvent[] }) {
       <ol className="mt-2 flex flex-col gap-1.5">
         {events.map((event) => (
           <li key={event.id} className="flex gap-2">
-            <span className="w-24 shrink-0 font-mono text-xs text-muted-foreground">
+            <span className="numeric w-24 shrink-0 text-xs text-muted-foreground">
               {formatTime(event.created_at)}
             </span>
             <span>
@@ -304,28 +299,14 @@ function formatTime(value: string): string {
   });
 }
 
-function StatusBadge({ matchCase }: { matchCase: MatchCase }) {
-  if (matchCase.status === "matched") {
-    return (
-      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-        <CircleCheck />
-        Matched
-      </Badge>
-    );
-  }
-  if (matchCase.status === "waiting") {
-    return (
-      <Badge variant="secondary">
-        <Clock />
-        Waiting for documents
-      </Badge>
-    );
+function MatchCaseStamp({ matchCase }: { matchCase: MatchCase }) {
+  if (matchCase.status !== "needs_review") {
+    return <MatchStamp status={matchCase.status} />;
   }
   const count = matchCase.discrepancies.length;
   return (
-    <Badge variant="destructive">
-      <CircleAlert />
+    <Stamp tone="warning">
       Needs review · {count} problem{count === 1 ? "" : "s"}
-    </Badge>
+    </Stamp>
   );
 }

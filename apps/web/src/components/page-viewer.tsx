@@ -46,8 +46,8 @@ export function PageViewer({ documentId, pageCount, evidence, selected }: Props)
               className={cn(
                 "pointer-events-none absolute rounded-sm transition-colors",
                 isSelected(item)
-                  ? "border-2 border-amber-500 bg-amber-300/35"
-                  : "border border-sky-500/25",
+                  ? "border-2 border-warning bg-warning/20"
+                  : "border border-primary/25",
               )}
               style={{
                 left: `${(item.x0 - PADDING) * 100}%`,
