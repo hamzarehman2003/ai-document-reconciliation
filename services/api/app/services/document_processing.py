@@ -3,6 +3,8 @@
 1. Check the file and count its pages.
 2. Read its data with AI.
 3. Find where each value is on the page (PDF text, or OCR for scans).
+4. Queue the 3-way match: a separate job, so it runs only after this
+   document is saved, and its errors never undo the extraction.
 """
 
 import logging
@@ -15,10 +17,11 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.llm.base import PermanentExtractionError
-from app.models import Document, DocumentStatus, FieldEvidence
+from app.models import Document, DocumentStatus, FieldEvidence, Job
 from app.services.evidence import find_evidence
 from app.services.extraction import extract_document
 from app.services.job_queue import PermanentJobError
+from app.services.matching import MATCH_DOCUMENT_JOB
 from app.services.page_text import read_page_lines
 from app.storage import LocalStorage
 
@@ -48,7 +51,13 @@ def process_document(
         raise PermanentJobError(str(error)) from error
     document.evidence = locate_evidence(document, path)
     document.status = DocumentStatus.PROCESSED
+    queue_matching(session, document)
     session.commit()
+
+
+def queue_matching(session: Session, document: Document) -> None:
+    """Saved together with the document, so the match always follows it."""
+    session.add(Job(kind=MATCH_DOCUMENT_JOB, payload={"document_id": document.id}))
 
 
 def locate_evidence(document: Document, path: Path) -> list[FieldEvidence]:
@@ -69,6 +78,7 @@ def mark_document_failed(
     if document is not None:
         document.status = DocumentStatus.FAILED
         document.error_message = message
+        queue_matching(session, document)  # cases using it must be re-checked
         session.commit()
 
 

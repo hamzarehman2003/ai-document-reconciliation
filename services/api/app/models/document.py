@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.models.extraction import Extraction
     from app.models.field_evidence import FieldEvidence
     from app.models.line_item import LineItem
+    from app.models.match_case import MatchCase
 
 Money = Numeric(14, 2)
 
@@ -84,4 +85,11 @@ class Document(TimestampMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="FieldEvidence.id",
+    )
+    # Only invoices have a match case.
+    match_case: Mapped["MatchCase | None"] = relationship(
+        foreign_keys="MatchCase.invoice_id",
+        back_populates="invoice",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

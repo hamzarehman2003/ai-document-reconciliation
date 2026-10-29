@@ -27,6 +27,7 @@ from app.services.job_queue import (
     fail_job,
     requeue_stale_jobs,
 )
+from app.services.matching import MATCH_DOCUMENT_JOB, run_match_job
 from app.services.uploads import PROCESS_DOCUMENT_JOB
 from app.storage import LocalStorage, get_storage
 
@@ -47,6 +48,7 @@ HANDLERS: dict[str, JobHandler] = {
     PROCESS_DOCUMENT_JOB: JobHandler(
         run=process_document, on_give_up=mark_document_failed
     ),
+    MATCH_DOCUMENT_JOB: JobHandler(run=run_match_job),
 }
 
 

@@ -104,16 +104,16 @@ def test_processing_saves_fields_line_items_and_extraction(
 def test_reprocessing_uses_the_cache(
     client: TestClient,
     session: Session,
-    storage: LocalStorage,
+    run_jobs: Callable[[], int],
     make_pdf: Callable[[], bytes],
     fake_extractor: FakeExtractor,
 ) -> None:
     document_id = upload_pdf(client, make_pdf())
-    process_next_job(session, storage)
+    run_jobs()
 
     response = client.post(f"/api/documents/{document_id}/reprocess")
     assert response.status_code == 202
-    process_next_job(session, storage)
+    run_jobs()
 
     assert fake_extractor.calls == 1  # second time came from the cache
     count = session.scalar(

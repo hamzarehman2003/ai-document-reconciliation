@@ -5,7 +5,7 @@ The AI extracts the data, the app matches the three documents, flags every misma
 reason, and exports only approved records.
 
 > Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API,
-> background worker, AI extraction, OCR + click-to-highlight evidence, simple upload page.
+> background worker, AI extraction, OCR + click-to-highlight evidence, 3-way matching, simple upload page.
 
 ## API
 
@@ -21,6 +21,9 @@ Interactive docs: http://localhost:8001/docs
 | GET | `/api/documents/{id}/pages/{n}` | One page as an image, for the page viewer |
 | POST | `/api/documents/{id}/reprocess` | Process a document again (uses the cache when the file was already read) |
 | GET | `/api/jobs?status=…` | Background jobs: queued, running, done or failed, with attempts and last error |
+| GET | `/api/match-cases?status=…&invoice_id=…` | 3-way match cases (one per invoice) with the problems found |
+| GET | `/api/match-cases/{id}` | One case with its invoice, purchase order and goods receipt |
+| POST | `/api/match-cases/refresh` | Check every invoice again (after changing rules or tolerances) |
 
 Uploads are processed by a separate **worker** process that takes jobs from a Postgres-backed queue
 (`SELECT … FOR UPDATE SKIP LOCKED`), retries temporary failures with backoff (30 s, 60 s, 120 s) and marks
@@ -35,6 +38,14 @@ checksum so the same file is never sent twice. The AI only reads. All checks are
 digital documents and **RapidOCR** (CPU, offline) for scans and photos. Each value is searched in all common
 formats (`30706.76` → `€30,706.76` or `30.706,76 €`), and line-item values only within their own table row.
 In the app, clicking a value highlights it on the page; values that can't be found are flagged for checking.
+
+**3-way matching:** each invoice is linked to its purchase order (by PO number) and goods receipt, in any upload
+order, and checked by plain Python rules (no AI): quantity billed vs received, price vs PO, items not on the PO,
+line and invoice arithmetic, missing PO reference, vendor mismatch and duplicate invoices (deliveries split over
+several goods receipts are added up). Matching runs as its own background job under a database lock, so documents
+can be processed by several workers at once and in any order. Every problem is
+explained in plain words ("CPF-15: billed 10, but only 8 received") and linked to the values on the page.
+The rules are tested against 300 generated document sets, each of which must get exactly its injected mistake.
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

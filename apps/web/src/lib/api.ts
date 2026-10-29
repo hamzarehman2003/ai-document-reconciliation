@@ -96,6 +96,35 @@ export async function uploadFiles(files: File[]): Promise<UploadResponse> {
   );
 }
 
+export type MatchStatus = "matched" | "needs_review" | "waiting";
+
+export type Discrepancy = {
+  code: string;
+  severity: "error" | "warning";
+  message: string;
+  details: Record<string, string>;
+  refs: { document_id: number | null; field: string }[];
+};
+
+export type MatchCase = {
+  id: number;
+  status: MatchStatus;
+  invoice_id: number;
+  invoice_number: string | null;
+  po_number: string | null;
+  purchase_order_id: number | null;
+  goods_receipt_ids: number[];
+  /** Still missing for a full check, even when problems were already found. */
+  waiting_for: ("purchase_order" | "goods_receipt")[];
+  discrepancies: Discrepancy[];
+};
+
+/** The 3-way match of an invoice, or null if it hasn't been checked yet. */
+export async function getMatchCaseForInvoice(invoiceId: number): Promise<MatchCase | null> {
+  const cases = await getJson<MatchCase[]>(`/api/match-cases?invoice_id=${invoiceId}`);
+  return cases[0] ?? null;
+}
+
 export async function getBatch(id: number): Promise<BatchDetail> {
   return getJson<BatchDetail>(`/api/batches/${id}`);
 }

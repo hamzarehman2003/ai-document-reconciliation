@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ExternalLink, Loader2, TriangleAlert } from "lucide-react";
 
+import { MatchPanel } from "@/components/match-panel";
 import { PageViewer } from "@/components/page-viewer";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -152,6 +153,10 @@ function ExtractedData({ document }: { document: DocumentDetail }) {
       </div>
 
       <div className="flex min-w-0 flex-col gap-6">
+        {document.doc_type === "invoice" && (
+          <MatchPanel invoiceId={document.id} onSelectField={setSelected} />
+        )}
+
         <p className="text-xs text-muted-foreground">
           Click a value to see where it is on the page.
         </p>

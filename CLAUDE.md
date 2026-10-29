@@ -43,6 +43,23 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   rows (boxes as 0-1 fractions of the page). Line-item values are searched only in their SKU's row.
 - Evidence is a bonus: if reading words fails, the document is still processed (no evidence).
 - Field names: header fields as on `Document` (`total`), line items as `line_items.<position>.<field>`.
+
+## 3-way matching
+- Rules live in `app/rules/` and are pure: plain dataclasses in (`DocumentData`), `Finding`s out. No database,
+  no AI. One function per rule in `checks.py`; `check_invoice()` runs them all.
+- Rule codes (`app/rules/types.py` `Code`) must stay in sync with the generator's `Scenario` codes.
+  `tests/test_rules.py` checks the rules against 300 generated sets: every set must get exactly its codes.
+- `app/services/matching.py` links invoice → PO (by PO number) → all receipts (by the PO number they reference;
+  quantities of several receipts are added up), runs the rules and saves one `MatchCase` per invoice with its
+  `Discrepancy` rows.
+- Matching is its own job (`match_document`), queued in the same commit that marks a document processed or failed.
+  It takes `lock_matching()` (a Postgres advisory lock), so only one matching runs at a time; anything else that
+  matches (e.g. `/refresh`) must take the same lock. A matching error is retried on its own and never fails the document.
+- A change to a document re-checks: invoices with the same number (duplicates, in any order), invoices referring to
+  its PO number, and every case that points at it (as PO, receipt, or in a problem's `refs`).
+- `MatchCase.waiting_for` lists missing documents even when the status is `needs_review`.
+- Tolerances are settings (`price_tolerance_percent`, `quantity_tolerance_percent`, `amount_tolerance`).
+  After changing rules or tolerances: `POST /api/match-cases/refresh`.
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.

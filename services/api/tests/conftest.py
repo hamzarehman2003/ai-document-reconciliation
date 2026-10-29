@@ -17,6 +17,7 @@ from sqlalchemy.orm import Session
 from app.db import check_database, engine, get_session
 from app.main import app
 from app.storage import LocalStorage, get_storage
+from app.worker import process_next_job
 from fakes import FakeExtractor
 
 
@@ -54,6 +55,19 @@ def client(session: Session, storage: LocalStorage) -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def run_jobs(session: Session, storage: LocalStorage) -> Callable[[], int]:
+    """Return a function that runs every job that is due, like the worker would."""
+
+    def run() -> int:
+        count = 0
+        while process_next_job(session, storage) is not None:
+            count += 1
+        return count
+
+    return run
 
 
 @pytest.fixture

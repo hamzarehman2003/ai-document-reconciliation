@@ -1,5 +1,6 @@
 """Application settings, loaded from the .env file in the project root."""
 
+from decimal import Decimal
 from pathlib import Path
 
 from pydantic import SecretStr
@@ -25,6 +26,11 @@ class Settings(BaseSettings):
     upload_dir: Path = PROJECT_ROOT / "data" / "uploads"
     max_upload_mb: int = 15
     max_files_per_batch: int = 20
+
+    # 3-way matching: how much difference is still accepted
+    price_tolerance_percent: Decimal = Decimal("0")
+    quantity_tolerance_percent: Decimal = Decimal("0")
+    amount_tolerance: Decimal = Decimal("0.01")
 
     # Background worker
     worker_poll_seconds: float = 1.0
