@@ -58,6 +58,9 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - A change to a document re-checks: invoices with the same number (duplicates, in any order), invoices referring to
   its PO number, and every case that points at it (as PO, receipt, or in a problem's `refs`).
 - `MatchCase.waiting_for` lists missing documents even when the status is `needs_review`.
+- `app/services/summary.py` `summarize()` gives each case a `verdict` and a one-sentence `summary` (shown as the
+  banner on the invoice and in the queue). Fixed wording from the result, never an LLM: it must not invent
+  numbers or names. Pure function, tested in `tests/test_summary.py`.
 
 ## Human review and audit log
 - `MatchCase.status` is what the rules found; `review_status` is the person's decision (pending/approved/rejected),

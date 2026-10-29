@@ -137,7 +137,12 @@ export type MatchCase = {
   review_note: string | null;
   updated_at: string;
   discrepancies: Discrepancy[];
+  /** Where the invoice stands, and the same in one sentence (written by the API). */
+  verdict: Verdict;
+  summary: string;
 };
+
+export type Verdict = "clear" | "needs_review" | "waiting" | "approved" | "rejected";
 
 /** An amount in one currency: currencies are never added together. */
 export type AmountByCurrency = {

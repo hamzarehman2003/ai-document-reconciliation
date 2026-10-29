@@ -9,7 +9,7 @@ import { MoneyTile } from "@/components/ledger/money-tile";
 import { StatTile } from "@/components/ledger/stat-tile";
 import { DailyChart } from "@/components/overview/daily-chart";
 import { TopProblems } from "@/components/overview/top-problems";
-import { CaseStamp, ProblemSummary, needsDecision } from "@/components/review/case-row-parts";
+import { CaseStamp, CaseSummary, needsDecision } from "@/components/review/case-row-parts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -156,7 +156,7 @@ function AttentionRow({ matchCase }: { matchCase: MatchCase }) {
         </span>
       </span>
       <span className="hidden min-w-0 flex-1 truncate text-sm md:block">
-        <ProblemSummary matchCase={matchCase} />
+        <CaseSummary matchCase={matchCase} />
       </span>
       <span className="numeric w-28 text-right text-sm">
         {formatMoney(matchCase.total, matchCase.currency)}

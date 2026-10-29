@@ -1,6 +1,5 @@
 import { MatchStamp, ReviewStamp } from "@/components/ledger/status-stamps";
 import type { MatchCase } from "@/lib/api";
-import { PROBLEM_LABELS } from "@/lib/format";
 
 /** Small pieces shared by the Overview list and the Review table. */
 
@@ -12,14 +11,11 @@ export function CaseStamp({ matchCase }: { matchCase: MatchCase }) {
   );
 }
 
-/** "Price differs from the order +1 more", or a quiet dash. */
-export function ProblemSummary({ matchCase }: { matchCase: MatchCase }) {
-  const [first, ...rest] = matchCase.discrepancies;
-  if (!first) return <span className="text-muted-foreground">—</span>;
+/** The case's one-line summary, cut to one line; the full sentence shows on hover. */
+export function CaseSummary({ matchCase }: { matchCase: MatchCase }) {
   return (
-    <span>
-      {PROBLEM_LABELS[first.code] ?? first.code}
-      {rest.length > 0 && <span className="text-muted-foreground"> +{rest.length} more</span>}
+    <span title={matchCase.summary} className="block truncate">
+      {matchCase.summary}
     </span>
   );
 }

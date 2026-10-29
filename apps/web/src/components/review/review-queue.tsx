@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Inbox, Search } from "lucide-react";
 
 import { EmptyState } from "@/components/ledger/empty-state";
-import { CaseStamp, ProblemSummary } from "@/components/review/case-row-parts";
+import { CaseStamp, CaseSummary } from "@/components/review/case-row-parts";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -130,7 +130,7 @@ function CaseTable({ cases }: { cases: MatchCase[] }) {
           <TableRow className="hover:bg-transparent">
             <TableHead>Invoice</TableHead>
             <TableHead>Dated</TableHead>
-            <TableHead>Problems</TableHead>
+            <TableHead>Summary</TableHead>
             <TableHead className="text-right">Total</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="text-right">Updated</TableHead>
@@ -159,8 +159,8 @@ function CaseTable({ cases }: { cases: MatchCase[] }) {
               <TableCell className="numeric text-muted-foreground">
                 {formatDate(item.invoice_date)}
               </TableCell>
-              <TableCell className="max-w-64 truncate">
-                <ProblemSummary matchCase={item} />
+              <TableCell className="max-w-80 text-muted-foreground">
+                <CaseSummary matchCase={item} />
               </TableCell>
               <TableCell className="numeric text-right">
                 {formatMoney(item.total, item.currency)}

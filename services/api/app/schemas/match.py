@@ -10,6 +10,7 @@ from app.models import MatchCase, MatchStatus, ReviewStatus
 from app.rules.types import Code, Severity
 from app.schemas.document import DocumentOut
 from app.services.review import Decision
+from app.services.summary import Verdict, summarize
 
 
 class DecisionRequest(BaseModel):
@@ -49,9 +50,13 @@ class MatchCaseOut(BaseModel):
     review_note: str | None
     updated_at: datetime
     discrepancies: list[DiscrepancyOut]
+    # Where the invoice stands, in one sentence (fixed wording: services/summary.py).
+    verdict: Verdict
+    summary: str
 
     @classmethod
     def from_case(cls, case: MatchCase) -> "MatchCaseOut":
+        summary = summarize(case)
         return cls(
             id=case.id,
             status=case.status,
@@ -73,6 +78,8 @@ class MatchCaseOut(BaseModel):
             discrepancies=[
                 DiscrepancyOut.model_validate(d) for d in case.discrepancies
             ],
+            verdict=summary.verdict,
+            summary=summary.text,
         )
 
 

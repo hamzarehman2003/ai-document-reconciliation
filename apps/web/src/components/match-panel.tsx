@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CircleAlert, Clock, TriangleAlert } from "lucide-react";
+import { CircleAlert, TriangleAlert } from "lucide-react";
 
 import { Stamp } from "@/components/ledger/stamp";
 import { MatchStamp } from "@/components/ledger/status-stamps";
+import { VerdictBanner } from "@/components/review/verdict-banner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -20,11 +21,6 @@ import { cn } from "@/lib/utils";
 const POLL_MS = 3000;
 const MAX_CHECKS_WITHOUT_CASE = 20; // the match normally appears within seconds
 const CHECKS_AFTER_A_CORRECTION = 4; // the re-check runs in the background
-
-const MISSING_LABELS = {
-  purchase_order: "the purchase order",
-  goods_receipt: "the goods receipt",
-} as const;
 
 type Props = {
   invoiceId: number;
@@ -102,23 +98,7 @@ export function MatchPanel({ invoiceId, onSelectField, refreshKey }: Props) {
         <MatchCaseStamp matchCase={matchCase} />
       </div>
 
-      {matchCase.waiting_for.length > 0 && (
-        <p className="flex items-start gap-2 text-sm text-muted-foreground">
-          <Clock className="mt-0.5 size-4 shrink-0" />
-          <span>
-            Not uploaded yet:{" "}
-            {matchCase.waiting_for.map((item) => MISSING_LABELS[item]).join(" and ")} for{" "}
-            {matchCase.po_number}. Upload it and this invoice is checked again automatically.
-          </span>
-        </p>
-      )}
-
-      {matchCase.status === "matched" && (
-        <p className="text-sm text-muted-foreground">
-          Quantities, prices and totals agree with purchase order {matchCase.po_number} and its
-          goods receipt{matchCase.goods_receipt_ids.length > 1 ? "s" : ""}.
-        </p>
-      )}
+      <VerdictBanner matchCase={matchCase} />
 
       {matchCase.discrepancies.length > 0 && (
         <ul className="flex flex-col gap-2">
