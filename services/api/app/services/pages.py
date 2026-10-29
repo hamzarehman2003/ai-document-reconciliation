@@ -1,4 +1,4 @@
-"""Turn a stored file into what the AI reads: page images plus any PDF text."""
+"""Turn a stored file into page images: for the AI, and for the page viewer."""
 
 from pathlib import Path
 
@@ -7,6 +7,15 @@ import pymupdf
 from app.llm.base import PageImage, PreparedDocument
 
 RENDER_DPI = 150
+VIEWER_DPI = 110
+
+
+def render_page_png(path: Path, page_number: int, dpi: int = VIEWER_DPI) -> bytes:
+    """One PDF page (1, 2, 3...) as a PNG. Raises IndexError if there's no such page."""
+    with pymupdf.open(path) as pdf:
+        if not 1 <= page_number <= pdf.page_count:
+            raise IndexError(f"The document has no page {page_number}.")
+        return pdf[page_number - 1].get_pixmap(dpi=dpi).tobytes("png")
 
 
 def prepare_document(path: Path, content_type: str, max_pages: int) -> PreparedDocument:

@@ -1,5 +1,11 @@
-"""The work done for each uploaded document: check the file, then read it with AI."""
+"""The work done for each uploaded document.
 
+1. Check the file and count its pages.
+2. Read its data with AI.
+3. Find where each value is on the page (PDF text, or OCR for scans).
+"""
+
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -7,11 +13,16 @@ import pymupdf
 from PIL import Image
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.llm.base import PermanentExtractionError
-from app.models import Document, DocumentStatus
+from app.models import Document, DocumentStatus, FieldEvidence
+from app.services.evidence import find_evidence
 from app.services.extraction import extract_document
 from app.services.job_queue import PermanentJobError
+from app.services.page_text import read_page_lines
 from app.storage import LocalStorage
+
+logger = logging.getLogger(__name__)
 
 
 def process_document(
@@ -35,8 +46,19 @@ def process_document(
         extract_document(session, storage, document)
     except PermanentExtractionError as error:
         raise PermanentJobError(str(error)) from error
+    document.evidence = locate_evidence(document, path)
     document.status = DocumentStatus.PROCESSED
     session.commit()
+
+
+def locate_evidence(document: Document, path: Path) -> list[FieldEvidence]:
+    """Where each value is on the page. A bonus: if it fails, keep the data anyway."""
+    try:
+        lines = read_page_lines(path, document.content_type, settings.max_pages)
+    except Exception:
+        logger.exception("Could not read the words of document %s", document.id)
+        return []
+    return find_evidence(document, lines)
 
 
 def mark_document_failed(

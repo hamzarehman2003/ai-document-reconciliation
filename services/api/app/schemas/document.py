@@ -63,9 +63,26 @@ class ExtractionInfo(BaseModel):
     created_at: datetime
 
 
+class EvidenceOut(BaseModel):
+    """Where a value was found: page number and a box as fractions (0-1) of the page."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    field: str
+    page: int
+    x0: float
+    y0: float
+    x1: float
+    y1: float
+    text: str
+    source: str
+    confidence: float | None
+
+
 class DocumentDetail(DocumentOut):
     line_items: list[LineItemOut]
     latest_extraction: ExtractionInfo | None
+    evidence: list[EvidenceOut]
 
     @classmethod
     def from_document(cls, document: Document) -> "DocumentDetail":
@@ -74,4 +91,5 @@ class DocumentDetail(DocumentOut):
             **DocumentOut.model_validate(document).model_dump(),
             line_items=[LineItemOut.model_validate(i) for i in document.line_items],
             latest_extraction=ExtractionInfo.model_validate(latest) if latest else None,
+            evidence=[EvidenceOut.model_validate(e) for e in document.evidence],
         )

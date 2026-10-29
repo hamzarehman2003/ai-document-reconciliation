@@ -22,6 +22,19 @@ export type LineItem = {
   line_total: string | null;
 };
 
+/** Where a value was found: page and box as fractions (0-1) of the page size. */
+export type Evidence = {
+  field: string; // "total", "line_items.3.unit_price", ...
+  page: number;
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+  text: string;
+  source: "pdf_text" | "ocr";
+  confidence: number | null;
+};
+
 export type DocumentDetail = DocumentSummary & {
   page_count: number | null;
   document_number: string | null;
@@ -41,6 +54,7 @@ export type DocumentDetail = DocumentSummary & {
     output_tokens: number | null;
     duration_ms: number | null;
   } | null;
+  evidence: Evidence[];
 };
 
 export type BatchDetail = {

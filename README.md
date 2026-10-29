@@ -5,7 +5,7 @@ The AI extracts the data, the app matches the three documents, flags every misma
 reason, and exports only approved records.
 
 > Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API,
-> background worker, AI extraction.
+> background worker, AI extraction, OCR + click-to-highlight evidence, simple upload page.
 
 ## API
 
@@ -16,8 +16,9 @@ Interactive docs: http://localhost:8001/docs
 | POST | `/api/batches` | Upload 1–20 PDF/PNG/JPEG files; each is checked, de-duplicated, stored and queued |
 | GET | `/api/batches` | Recent batches with document counts |
 | GET | `/api/batches/{id}` | One batch with its documents |
-| GET | `/api/documents/{id}` | One document with the data the AI read: type, number, vendor, dates, totals, line items |
+| GET | `/api/documents/{id}` | One document with the data the AI read (type, number, vendor, dates, totals, line items) and where each value is on the page |
 | GET | `/api/documents/{id}/file` | The original file |
+| GET | `/api/documents/{id}/pages/{n}` | One page as an image, for the page viewer |
 | POST | `/api/documents/{id}/reprocess` | Process a document again (uses the cache when the file was already read) |
 | GET | `/api/jobs?status=…` | Background jobs: queued, running, done or failed, with attempts and last error |
 
@@ -29,6 +30,11 @@ documents as failed with a reason when a file can't be processed. Several worker
 PDF's text layer (scans have none and are read from the image). Gemini must answer in a strict JSON schema;
 the answer is validated with Pydantic, amounts are stored as exact decimals, and every result is cached by file
 checksum so the same file is never sent twice. The AI only reads. All checks are done by plain Python rules.
+
+**Evidence (click-to-highlight):** every extracted value is located on the page, using the PDF's own words for
+digital documents and **RapidOCR** (CPU, offline) for scans and photos. Each value is searched in all common
+formats (`30706.76` → `€30,706.76` or `30.706,76 €`), and line-item values only within their own table row.
+In the app, clicking a value highlights it on the page; values that can't be found are flagged for checking.
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

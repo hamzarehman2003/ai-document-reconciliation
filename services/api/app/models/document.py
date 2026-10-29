@@ -13,6 +13,7 @@ from app.models.base import Base, TimestampMixin, text_enum
 if TYPE_CHECKING:
     from app.models.batch import Batch
     from app.models.extraction import Extraction
+    from app.models.field_evidence import FieldEvidence
     from app.models.line_item import LineItem
 
 Money = Numeric(14, 2)
@@ -77,4 +78,10 @@ class Document(TimestampMixin, Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
         order_by="Extraction.id",
+    )
+    evidence: Mapped[list["FieldEvidence"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="FieldEvidence.id",
     )

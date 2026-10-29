@@ -14,9 +14,10 @@ alembic==1.20.1
 # AI extraction (Google Gemini)
 google-genai==2.33.0
 
-# Documents (PDF reading/writing, images)
+# Documents (PDF reading/writing, images, OCR for scans)
 pymupdf==2.0
 pillow==13.0.0
+rapidocr==3.10.0
 
 # Demo dataset generator
 faker==40.43.0

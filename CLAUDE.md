@@ -35,6 +35,14 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Tests never call the real API: the autouse `fake_extractor` fixture (`tests/fakes.py`) replaces it.
 - Gemini errors: 408/429/5xx and network problems → normal exception (retried); other API errors and a
   missing key → `PermanentExtractionError` (document fails with a clear message).
+
+## Evidence (where each value is on the page)
+- `app/services/page_text.py` reads every word with its box: PDF text for digital pages, RapidOCR
+  (`app/services/ocr.py`, CPU, models bundled in the package) for scans and photos. Gemini's input does not change.
+- `app/services/evidence.py` searches each extracted value in all common formats and saves `field_evidence`
+  rows (boxes as 0-1 fractions of the page). Line-item values are searched only in their SKU's row.
+- Evidence is a bonus: if reading words fails, the document is still processed (no evidence).
+- Field names: header fields as on `Document` (`total`), line items as `line_items.<position>.<field>`.
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.

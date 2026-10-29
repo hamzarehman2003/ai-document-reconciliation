@@ -1,6 +1,6 @@
 """Look at single documents, download the original file, or process it again."""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -9,6 +9,7 @@ from app.db import SessionDep
 from app.models import Document, DocumentStatus, Job, JobStatus
 from app.schemas.document import DocumentDetail
 from app.schemas.job import JobOut
+from app.services.pages import render_page_png
 from app.services.uploads import PROCESS_DOCUMENT_JOB
 from app.storage import StorageDep
 
@@ -43,6 +44,31 @@ def get_document_file(
         filename=document.filename,
         content_disposition_type="inline",
     )
+
+
+@router.get(
+    "/{document_id}/pages/{page_number}",
+    response_class=Response,
+    responses={200: {"content": {"image/png": {}, "image/jpeg": {}}}},
+)
+def get_page_image(
+    session: SessionDep, storage: StorageDep, document_id: int, page_number: int
+) -> Response:
+    """One page as an image, for the page viewer (evidence boxes are drawn on it)."""
+    document = get_document_or_404(session, document_id)
+    path = storage.path(document.storage_key)
+    if not path.is_file():
+        raise HTTPException(404, "The file is missing from storage.")
+
+    if document.content_type != "application/pdf":  # a photo is its own single page
+        if page_number != 1:
+            raise HTTPException(404, f"The document has no page {page_number}.")
+        return FileResponse(path, media_type=document.content_type)
+    try:
+        image = render_page_png(path, page_number)
+    except IndexError as error:
+        raise HTTPException(404, str(error)) from error
+    return Response(image, media_type="image/png")
 
 
 @router.post("/{document_id}/reprocess", status_code=202)
