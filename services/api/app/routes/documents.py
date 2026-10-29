@@ -1,12 +1,15 @@
-"""Look at single documents and download the original file."""
+"""Look at single documents, download the original file, or process it again."""
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db import SessionDep
-from app.models import Document
-from app.schemas.document import DocumentOut
+from app.models import Document, DocumentStatus, Job, JobStatus
+from app.schemas.document import DocumentDetail
+from app.schemas.job import JobOut
+from app.services.uploads import PROCESS_DOCUMENT_JOB
 from app.storage import StorageDep
 
 router = APIRouter(prefix="/api/documents", tags=["documents"])
@@ -20,8 +23,9 @@ def get_document_or_404(session: Session, document_id: int) -> Document:
 
 
 @router.get("/{document_id}")
-def get_document(session: SessionDep, document_id: int) -> DocumentOut:
-    return DocumentOut.model_validate(get_document_or_404(session, document_id))
+def get_document(session: SessionDep, document_id: int) -> DocumentDetail:
+    """A document with the data the AI read from it and its line items."""
+    return DocumentDetail.from_document(get_document_or_404(session, document_id))
 
 
 @router.get("/{document_id}/file")
@@ -39,3 +43,25 @@ def get_document_file(
         filename=document.filename,
         content_disposition_type="inline",
     )
+
+
+@router.post("/{document_id}/reprocess", status_code=202)
+def reprocess_document(session: SessionDep, document_id: int) -> JobOut:
+    """Queue the document to be processed again (uses the cache if possible)."""
+    document = get_document_or_404(session, document_id)
+    waiting = session.scalars(
+        select(Job).where(
+            Job.kind == PROCESS_DOCUMENT_JOB,
+            Job.payload["document_id"].as_integer() == document_id,
+            Job.status.in_([JobStatus.QUEUED, JobStatus.RUNNING]),
+        )
+    ).first()
+    if waiting is not None:
+        raise HTTPException(409, f"Already waiting to be processed (job {waiting.id}).")
+
+    job = Job(kind=PROCESS_DOCUMENT_JOB, payload={"document_id": document_id})
+    document.status = DocumentStatus.UPLOADED
+    document.error_message = None
+    session.add(job)
+    session.commit()
+    return JobOut.model_validate(job)

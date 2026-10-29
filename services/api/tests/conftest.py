@@ -17,6 +17,15 @@ from sqlalchemy.orm import Session
 from app.db import check_database, engine, get_session
 from app.main import app
 from app.storage import LocalStorage, get_storage
+from fakes import FakeExtractor
+
+
+@pytest.fixture(autouse=True)
+def fake_extractor(monkeypatch: pytest.MonkeyPatch) -> FakeExtractor:
+    """Used by every test automatically, so tests never call the real AI."""
+    fake = FakeExtractor()
+    monkeypatch.setattr("app.services.extraction.get_extractor", lambda: fake)
+    return fake
 
 
 @pytest.fixture

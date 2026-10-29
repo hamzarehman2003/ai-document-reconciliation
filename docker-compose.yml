@@ -2,6 +2,7 @@ services:
   db:
     image: postgres:16
     container_name: invoiceiq-db
+    restart: unless-stopped  # start again automatically when Docker restarts
     environment:
       POSTGRES_USER: invoiceiq
       POSTGRES_PASSWORD: invoiceiq

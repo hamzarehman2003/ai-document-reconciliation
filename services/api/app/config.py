@@ -15,7 +15,11 @@ class Settings(BaseSettings):
     )
 
     database_url: str
+
+    # AI extraction
     gemini_api_key: SecretStr = SecretStr("")
+    gemini_model: str = "gemini-flash-lite-latest"
+    max_pages: int = 5
 
     # Uploads
     upload_dir: Path = PROJECT_ROOT / "data" / "uploads"

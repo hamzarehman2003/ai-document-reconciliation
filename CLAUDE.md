@@ -24,6 +24,17 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   with a `Job(kind=..., payload=...)`. Raise `PermanentJobError` for errors that retrying can't fix;
   any other exception is retried with backoff (`app/services/job_queue.py`).
 - Worker tests use the `empty_queue` fixture (`tests/test_worker.py`) to hide jobs from the dev database.
+
+## AI extraction
+- Everything that talks to an AI model lives in `app/llm/`. The rest of the app only calls
+  `get_extractor().extract(PreparedDocument)` and gets an `ExtractionResult` back.
+- The JSON shape the model must return is `app/llm/schema.py`; the instruction is `app/llm/prompt.py`.
+  Bump `PROMPT_VERSION` when either changes (old cached results are then ignored).
+- The AI only reads. All checks (totals, matching) are plain Python rules.
+- Results are cached in `extractions` by file checksum + prompt version: never call Gemini twice for one file.
+- Tests never call the real API: the autouse `fake_extractor` fixture (`tests/fakes.py`) replaces it.
+- Gemini errors: 408/429/5xx and network problems → normal exception (retried); other API errors and a
+  missing key → `PermanentExtractionError` (document fails with a clear message).
 - Type hints on all functions. Use Pydantic models for data shapes.
 - Small functions with clear names. Short docstrings on public functions and modules only.
 - Validation and matching rules are plain Python with no I/O and no LLM calls, each with pytest tests.

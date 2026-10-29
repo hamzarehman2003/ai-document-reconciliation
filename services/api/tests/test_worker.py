@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app import worker
@@ -181,3 +182,25 @@ def test_list_jobs_filters_by_status(
 
     assert any(job["payload"] == {"document_id": document_id} for job in jobs)
     assert all(job["status"] == "queued" for job in jobs)
+
+
+def test_worker_waits_out_a_database_outage(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The database disappears once: the worker waits and carries on, no crash."""
+    outage = OperationalError("SELECT 1", {}, ConnectionError("connection refused"))
+    attempts: list[str] = []
+    sleeps: list[float] = []
+
+    def requeue_with_one_outage(session: Session) -> int:
+        attempts.append("try")
+        if len(attempts) == 1:
+            raise outage
+        return 0
+
+    monkeypatch.setattr(worker, "requeue_stale_jobs", requeue_with_one_outage)
+    monkeypatch.setattr(worker, "process_next_job", lambda session, storage: None)
+    monkeypatch.setattr(worker.time, "sleep", sleeps.append)
+
+    worker.run_worker(once=True)
+
+    assert len(attempts) == 2  # failed once, then worked
+    assert sleeps == [worker.DATABASE_RETRY_SECONDS]

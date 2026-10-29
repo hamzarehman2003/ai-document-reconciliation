@@ -13,6 +13,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 from app.config import settings
@@ -32,6 +33,7 @@ from app.storage import LocalStorage, get_storage
 logger = logging.getLogger("worker")
 
 STALE_CHECK_SECONDS = 60
+DATABASE_RETRY_SECONDS = 5
 
 
 @dataclass(frozen=True)
@@ -92,24 +94,41 @@ def run_worker(once: bool = False) -> None:
         logger.info("Stopping after the current job... (Ctrl+C again to force)")
         signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    signal.signal(signal.SIGINT, request_stop)
+    previous_handler = signal.signal(signal.SIGINT, request_stop)
     logger.info("Worker started. Waiting for jobs... (Ctrl+C to stop)")
 
     last_stale_check = float("-inf")
-    while not stopping:
-        if time.monotonic() - last_stale_check > STALE_CHECK_SECONDS:
-            with SessionLocal() as session:
-                requeued = requeue_stale_jobs(session)
-            if requeued:
-                logger.warning("Put %s stuck job(s) back in the queue", requeued)
-            last_stale_check = time.monotonic()
+    try:
+        while not stopping:
+            try:
+                if time.monotonic() - last_stale_check > STALE_CHECK_SECONDS:
+                    with SessionLocal() as session:
+                        requeued = requeue_stale_jobs(session)
+                    if requeued:
+                        logger.warning(
+                            "Put %s stuck job(s) back in the queue", requeued
+                        )
+                    last_stale_check = time.monotonic()
 
-        with SessionLocal() as session:
-            job = process_next_job(session, storage)
-        if job is None:
-            if once:
-                break
-            time.sleep(settings.worker_poll_seconds)
+                with SessionLocal() as session:
+                    job = process_next_job(session, storage)
+            except OperationalError as error:
+                # Database restarting or unreachable: wait, then carry on.
+                # A job interrupted here is picked up again by the stuck-job check.
+                logger.warning(
+                    "Database unavailable (%s); retrying in %s s",
+                    str(error).splitlines()[0],
+                    DATABASE_RETRY_SECONDS,
+                )
+                time.sleep(DATABASE_RETRY_SECONDS)
+                continue
+
+            if job is None:
+                if once:
+                    break
+                time.sleep(settings.worker_poll_seconds)
+    finally:
+        signal.signal(signal.SIGINT, previous_handler)
 
     logger.info("Worker stopped.")
 

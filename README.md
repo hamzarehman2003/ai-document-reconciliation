@@ -5,7 +5,7 @@ The AI extracts the data, the app matches the three documents, flags every misma
 reason, and exports only approved records.
 
 > Work in progress. Done so far: project foundations, demo dataset generator, database tables, upload API,
-> background worker.
+> background worker, AI extraction.
 
 ## API
 
@@ -16,13 +16,19 @@ Interactive docs: http://localhost:8001/docs
 | POST | `/api/batches` | Upload 1–20 PDF/PNG/JPEG files; each is checked, de-duplicated, stored and queued |
 | GET | `/api/batches` | Recent batches with document counts |
 | GET | `/api/batches/{id}` | One batch with its documents |
-| GET | `/api/documents/{id}` | One document |
+| GET | `/api/documents/{id}` | One document with the data the AI read: type, number, vendor, dates, totals, line items |
 | GET | `/api/documents/{id}/file` | The original file |
+| POST | `/api/documents/{id}/reprocess` | Process a document again (uses the cache when the file was already read) |
 | GET | `/api/jobs?status=…` | Background jobs: queued, running, done or failed, with attempts and last error |
 
 Uploads are processed by a separate **worker** process that takes jobs from a Postgres-backed queue
 (`SELECT … FOR UPDATE SKIP LOCKED`), retries temporary failures with backoff (30 s, 60 s, 120 s) and marks
 documents as failed with a reason when a file can't be processed. Several workers can run side by side.
+
+**AI extraction:** each page is rendered to an image and sent to Google Gemini (Flash-Lite) together with the
+PDF's text layer (scans have none and are read from the image). Gemini must answer in a strict JSON schema;
+the answer is validated with Pydantic, amounts are stored as exact decimals, and every result is cached by file
+checksum so the same file is never sent twice. The AI only reads. All checks are done by plain Python rules.
 
 ## Tech stack
 - **Web:** Next.js, TypeScript, Tailwind CSS, shadcn/ui

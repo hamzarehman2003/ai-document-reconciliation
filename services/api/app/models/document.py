@@ -1,15 +1,21 @@
 """An uploaded file and where it is in the processing pipeline."""
 
+from datetime import date
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin, text_enum
 
 if TYPE_CHECKING:
     from app.models.batch import Batch
+    from app.models.extraction import Extraction
+    from app.models.line_item import LineItem
+
+Money = Numeric(14, 2)
 
 
 class DocumentType(StrEnum):
@@ -47,4 +53,28 @@ class Document(TimestampMixin, Base):
     page_count: Mapped[int | None]
     error_message: Mapped[str | None] = mapped_column(Text)
 
+    # Filled in by AI extraction (empty until the document is processed).
+    document_number: Mapped[str | None] = mapped_column(String(100))
+    vendor_name: Mapped[str | None] = mapped_column(String(200))
+    buyer_name: Mapped[str | None] = mapped_column(String(200))
+    issue_date: Mapped[date | None]
+    due_date: Mapped[date | None]
+    po_reference: Mapped[str | None] = mapped_column(String(100))
+    currency: Mapped[str | None] = mapped_column(String(3))
+    subtotal: Mapped[Decimal | None] = mapped_column(Money)
+    tax: Mapped[Decimal | None] = mapped_column(Money)
+    total: Mapped[Decimal | None] = mapped_column(Money)
+
     batch: Mapped["Batch"] = relationship(back_populates="documents")
+    line_items: Mapped[list["LineItem"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="LineItem.position",
+    )
+    extractions: Mapped[list["Extraction"]] = relationship(
+        back_populates="document",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        order_by="Extraction.id",
+    )

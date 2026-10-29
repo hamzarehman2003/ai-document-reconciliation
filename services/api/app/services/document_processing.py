@@ -1,7 +1,4 @@
-"""The work done for each uploaded document.
-
-For now: open the file and count its pages. AI extraction is added here next.
-"""
+"""The work done for each uploaded document: check the file, then read it with AI."""
 
 from pathlib import Path
 from typing import Any
@@ -10,7 +7,9 @@ import pymupdf
 from PIL import Image
 from sqlalchemy.orm import Session
 
+from app.llm.base import PermanentExtractionError
 from app.models import Document, DocumentStatus
+from app.services.extraction import extract_document
 from app.services.job_queue import PermanentJobError
 from app.storage import LocalStorage
 
@@ -32,6 +31,10 @@ def process_document(
         raise PermanentJobError("The uploaded file is missing from storage.")
 
     document.page_count = count_pages(path, document.content_type)
+    try:
+        extract_document(session, storage, document)
+    except PermanentExtractionError as error:
+        raise PermanentJobError(str(error)) from error
     document.status = DocumentStatus.PROCESSED
     session.commit()
 
