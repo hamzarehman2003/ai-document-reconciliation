@@ -122,6 +122,10 @@ export type MatchCase = {
   status: MatchStatus;
   invoice_id: number;
   invoice_number: string | null;
+  vendor_name: string | null;
+  invoice_date: string | null;
+  currency: string | null;
+  total: string | null;
   po_number: string | null;
   purchase_order_id: number | null;
   goods_receipt_ids: number[];
@@ -133,6 +137,42 @@ export type MatchCase = {
   review_note: string | null;
   updated_at: string;
   discrepancies: Discrepancy[];
+};
+
+/** An amount in one currency: currencies are never added together. */
+export type AmountByCurrency = {
+  currency: string;
+  amount: string;
+  invoices: number;
+};
+
+export type Dashboard = {
+  documents: {
+    total: number;
+    processed: number;
+    failed: number;
+    in_progress: number;
+    by_type: Partial<Record<DocumentType, number>>;
+  };
+  invoices: {
+    total: number;
+    by_match_status: Partial<Record<MatchStatus, number>>;
+    by_review_status: Partial<Record<MatchCase["review_status"], number>>;
+    /** Matched ÷ (matched + needs review), or null before the first check. */
+    match_rate: number | null;
+  };
+  money_at_risk: AmountByCurrency[];
+  approved_amount: AmountByCurrency[];
+  top_problems: { code: string; count: number }[];
+  ai: {
+    documents_read: number;
+    average_seconds: number | null;
+    input_tokens: number;
+    output_tokens: number;
+  };
+  corrections: number;
+  /** The last 14 days, oldest first, zeros included. */
+  daily: { day: string; uploaded: number; approved: number }[];
 };
 
 export type AuditEvent = {
@@ -178,6 +218,15 @@ export async function getHistory(documentId: number): Promise<AuditEvent[]> {
 export async function getMatchCaseForInvoice(invoiceId: number): Promise<MatchCase | null> {
   const cases = await getJson<MatchCase[]>(`/api/match-cases?invoice_id=${invoiceId}`);
   return cases[0] ?? null;
+}
+
+/** Recently checked invoices first (up to 200, enough for the demo). */
+export async function listMatchCases(): Promise<MatchCase[]> {
+  return getJson<MatchCase[]>("/api/match-cases?limit=200");
+}
+
+export async function getDashboard(): Promise<Dashboard> {
+  return getJson<Dashboard>("/api/dashboard");
 }
 
 export async function getBatch(id: number): Promise<BatchDetail> {

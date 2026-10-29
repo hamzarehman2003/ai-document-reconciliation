@@ -205,6 +205,12 @@ def test_problems_found_and_still_waiting_for_documents(
 
     assert case["status"] == "needs_review"
     assert case["waiting_for"] == ["purchase_order", "goods_receipt"]
+    # The review queue shows the amount and date without loading the invoice.
+    assert (case["total"], case["currency"], case["invoice_date"]) == (
+        "45.00",
+        "EUR",
+        "2026-03-02",
+    )
 
 
 def test_document_that_is_no_longer_an_invoice_loses_its_case(session: Session) -> None:

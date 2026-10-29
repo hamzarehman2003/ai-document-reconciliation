@@ -123,6 +123,11 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
 - Next.js (App Router) + TypeScript + Tailwind + shadcn/ui components.
 - Use shadcn/ui components before writing custom ones. Keep components small.
 - No `any` types. Use realistic demo data, never lorem ipsum.
+- Data is loaded in client components through `src/lib/api.ts` (relative `/api/*` URLs); pages stay
+  server components with `metadata`. With `cacheComponents`, anything that reads `usePathname()`/`params`
+  must sit inside `<Suspense>`, or routes with an id in the URL fail to build (see `app-sidebar.tsx`).
+- Charts: shadcn `chart` (recharts), colours from the `--chart-*` tokens. One series per chart unless a
+  palette passes the dataviz validator.
 
 ## Design system ("Ledger")
 - Colours are tokens in `apps/web/src/app/globals.css` (light `:root` and `.dark`). Never hard-code

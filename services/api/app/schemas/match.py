@@ -1,6 +1,7 @@
 """Response shapes for 3-way match cases."""
 
-from datetime import datetime
+from datetime import date, datetime
+from decimal import Decimal
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -36,6 +37,9 @@ class MatchCaseOut(BaseModel):
     invoice_id: int
     invoice_number: str | None
     vendor_name: str | None
+    invoice_date: date | None
+    currency: str | None
+    total: Decimal | None
     po_number: str | None
     purchase_order_id: int | None
     goods_receipt_ids: list[int]
@@ -56,6 +60,9 @@ class MatchCaseOut(BaseModel):
             invoice_id=case.invoice_id,
             invoice_number=case.invoice.document_number,
             vendor_name=case.invoice.vendor_name,
+            invoice_date=case.invoice.issue_date,
+            currency=case.invoice.currency,
+            total=case.invoice.total,
             po_number=case.invoice.po_reference,
             purchase_order_id=case.purchase_order_id,
             goods_receipt_ids=[receipt.id for receipt in case.goods_receipts],

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { ClipboardCheck } from "lucide-react";
 
-import { EmptyState } from "@/components/ledger/empty-state";
 import { PageHeader } from "@/components/ledger/page-header";
+import { ReviewQueue } from "@/components/review/review-queue";
 
 export const metadata: Metadata = { title: "Review" };
 
@@ -12,13 +11,9 @@ export default function ReviewPage() {
       <PageHeader
         eyebrow="Workspace"
         title="Review"
-        description="Invoices that did not match their order or receipt, waiting for you to approve or reject."
+        description="Every invoice checked against its purchase order and goods receipt. Open one to see what differs and approve or reject it."
       />
-      <EmptyState
-        icon={ClipboardCheck}
-        title="The review queue arrives in the next step"
-        description="Each exception will show what differs, side by side, with one-click decisions."
-      />
+      <ReviewQueue />
     </>
   );
 }
