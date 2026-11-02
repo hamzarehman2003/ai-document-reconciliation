@@ -117,6 +117,10 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   `store_uploads()` from `routes/batches.py`, the same flow as the Upload page. It needs the `X-API-Key` header
   (`INTAKE_API_KEY` in `.env`, checked by `require_intake_key()` in `app/auth.py`); the key can only upload.
   Uploads are recorded as "n8n (email intake)".
+- Outbound: `app/services/webhooks.py`. `queue_event()` adds a `send_webhook` job in the same transaction as the
+  action (`case.approved` in `review.decide()`, `case.needs_review` in `match_invoice()` when the status changes to it);
+  the worker builds the JSON (`event_body()`) when sending and POSTs it to `N8N_WEBHOOK_URL` with `X-Webhook-Secret`.
+  4xx → `PermanentJobError`; n8n down/5xx → retried. Empty URL = off. Tests fake `urlopen`, never call n8n.
 - n8n credentials (Gmail app password, the API key) live only in n8n, never in an exported workflow file.
 
 ## Database

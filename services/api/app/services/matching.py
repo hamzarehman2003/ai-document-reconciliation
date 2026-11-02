@@ -28,6 +28,7 @@ from app.models import (
 from app.models.match_case import match_case_receipts
 from app.rules import DocumentData, Finding, LineData, Tolerances, check_invoice
 from app.services.audit import SYSTEM, record
+from app.services.webhooks import Event, queue_event
 from app.storage import LocalStorage
 
 MATCH_DOCUMENT_JOB = "match_document"
@@ -155,6 +156,9 @@ def match_invoice(session: Session, invoice: Document) -> MatchCase:
             case.id,
             {"from": old_status.value if old_status else None, "to": case.status.value},
         )
+        # Alert once, when problems are first found (not on every re-check).
+        if case.status is MatchStatus.NEEDS_REVIEW:
+            queue_event(session, Event.CASE_NEEDS_REVIEW, case)
     return case
 
 

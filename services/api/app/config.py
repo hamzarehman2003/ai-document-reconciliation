@@ -23,6 +23,12 @@ class Settings(BaseSettings):
 
     # Automations (n8n): the key for POST /api/webhooks/inbound. Empty = switched off.
     intake_api_key: SecretStr = SecretStr("")
+    # Outgoing events (case.approved, case.needs_review) go to this n8n Webhook URL,
+    # with WEBHOOK_SECRET in the X-Webhook-Secret header. Empty URL = switched off.
+    n8n_webhook_url: str = ""
+    webhook_secret: SecretStr = SecretStr("")
+    # Where the web app runs, for links in messages.
+    web_url: str = "http://localhost:3001"
 
     # AI extraction
     gemini_api_key: SecretStr = SecretStr("")

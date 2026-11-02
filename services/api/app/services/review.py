@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models import AuditAction, AuditObject, MatchCase, ReviewStatus
 from app.services.audit import Actor, record
+from app.services.webhooks import Event, queue_event
 
 
 class Decision(StrEnum):
@@ -69,4 +70,6 @@ def decide(
         case.id,
         {"note": note, "match_status": case.status.value},
     )
+    if decision is Decision.APPROVE:
+        queue_event(session, Event.CASE_APPROVED, case)
     return case
