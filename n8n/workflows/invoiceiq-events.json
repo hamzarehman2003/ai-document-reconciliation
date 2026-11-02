@@ -1,0 +1,298 @@
+{
+  "name": "InvoiceIQ events",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "invoiceiq-events",
+        "authentication": "headerAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "4259a9ca-06d1-4377-aac4-8316da02b386",
+      "name": "Webhook",
+      "webhookId": "dea5ee55-c63d-4efc-958e-493c485ebd92",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "DexKX5xneqlbeOsU",
+          "name": "InvoiceIQ webhook secret"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "case.needs_review",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "844dca36-8ca9-44d7-9fe3-52c0c85c29ba"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Needs review"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 4
+                },
+                "conditions": [
+                  {
+                    "id": "7ad26371-826e-4b91-991f-8c1cbfb9355a",
+                    "leftValue": "={{ $json.body.event }}",
+                    "rightValue": "case.approved",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approved"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.5,
+      "position": [
+        224,
+        0
+      ],
+      "id": "6cadb5ac-537d-4c9a-8f5a-244d5551f5c6",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "fromEmail": "your-demo-inbox@gmail.com",
+        "toEmail": "alerts@example.com",
+        "subject": "=Needs review: {{ $json.body.invoice_number }} from {{ $json.body.vendor }}",
+        "emailFormat": "text",
+        "text": "={{ $json.body.summary }}\n\nInvoice: {{ $json.body.invoice_number }} ({{ $json.body.vendor }})\nTotal: {{ $json.body.currency }} {{ $json.body.total }}\nPurchase order: {{ $json.body.po_number }}\n\nOpen it in InvoiceIQ: {{ $json.body.link }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        448,
+        -96
+      ],
+      "id": "7230686e-0ce2-4a12-8bfb-caf3617acc13",
+      "name": "Send an Email",
+      "webhookId": "b98c4afc-06c7-4946-88de-23782a3f6c6c",
+      "credentials": {
+        "smtp": {
+          "id": "yLrMIIW6WvIlXKVw",
+          "name": "SMTP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "serviceAccount",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEET_ID",
+          "mode": "list",
+          "cachedResultName": "InvoiceIQ – Approved invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Approved at": "={{ $json.body.reviewed_at }}",
+            "Invoice": "={{ $json.body.invoice_number }}",
+            "Vendor": "={{ $json.body.vendor }}",
+            "Invoice date": "={{ $json.body.invoice_date }}",
+            "Currency": "={{ $json.body.currency }}",
+            "Total": "={{ $json.body.total }}",
+            "PO number": "={{ $json.body.po_number }}",
+            "Approved by": "={{ $json.body.reviewed_by }}",
+            "Note": "={{ $json.body.review_note }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Approved at",
+              "displayName": "Approved at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice",
+              "displayName": "Invoice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Vendor",
+              "displayName": "Vendor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice date",
+              "displayName": "Invoice date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Total",
+              "displayName": "Total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "PO number",
+              "displayName": "PO number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Approved by",
+              "displayName": "Approved by",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Note",
+              "displayName": "Note",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        448,
+        96
+      ],
+      "id": "bc4e0d02-f57c-44b8-bcb6-1e8c114df9ee",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleApi": {
+          "id": "qX59E3LZEk8zoluB",
+          "name": "Google Service Account account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Send an Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "70857f6c-7e4f-46b1-bf45-6efbfd51ab85",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fce679cb2aeb847dd096a73f01f7aff75bbdca005d7fd97ecdafc2b600f25d01"
+  },
+  "nodeGroups": [],
+  "id": "K6Cpaebcvq7jamIy",
+  "tags": []
+}
