@@ -1,0 +1,119 @@
+{
+  "name": "Email intake → InvoiceIQ",
+  "nodes": [
+    {
+      "parameters": {
+        "downloadAttachments": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.emailReadImap",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "fef2a2b4-92de-43d9-a52d-ff700438ae24",
+      "name": "Email Trigger (IMAP)",
+      "credentials": {
+        "imap": {
+          "id": "RNqxdhHqPBY2s8th",
+          "name": "IMAP account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// One item per PDF attachment, with who sent it and the subject.\nconst out = [];\nfor (const email of $input.all()) {\n  for (const file of Object.values(email.binary ?? {})) {\n    const isPdf = file.mimeType === 'application/pdf'\n      || (file.fileName ?? '').toLowerCase().endsWith('.pdf');\n    if (isPdf) {\n      out.push({\n        json: { sender: email.json.from, subject: email.json.subject, fileName: file.fileName },\n        binary: { file },\n      });\n    }\n  }\n}\nreturn out;\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "e0b45356-375b-48a7-ac93-279ba6615bbd",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8001/api/webhooks/inbound",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "file"
+            },
+            {
+              "name": "sender",
+              "value": "={{ $json.sender }}"
+            },
+            {
+              "name": "subject",
+              "value": "={{ $json.subject }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        448,
+        0
+      ],
+      "id": "1c8f3a30-c07f-4a93-b6ca-1258af5969d7",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "kFiaMCzmurx8Jg1g",
+          "name": "InvoiceIQ intake key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Email Trigger (IMAP)": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b60a3751-ec2e-4928-975b-fc1d62173538",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "fce679cb2aeb847dd096a73f01f7aff75bbdca005d7fd97ecdafc2b600f25d01"
+  },
+  "nodeGroups": [],
+  "id": "3WgSj2rPmksNQncL",
+  "tags": []
+}

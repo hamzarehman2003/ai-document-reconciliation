@@ -110,6 +110,15 @@ The full spec is in `01_ai_document_processing_automation.md`. Follow it, but ke
   in the root `.env`. Only the public URL and publishable key are used; never the secret/service_role key.
 - "Try the demo" logs into a shared demo account (`NEXT_PUBLIC_DEMO_*`); its password is public by design.
 
+## Automations (n8n)
+- n8n runs in Docker Compose (`invoiceiq-n8n`, http://localhost:5678); workflows are built in its browser canvas
+  and exported as JSON to `n8n/workflows/`. From inside the container our API is `http://host.docker.internal:8001`.
+- Inbound: `POST /api/webhooks/inbound` (`app/routes/webhooks.py`) takes files + `sender`/`subject` and uses
+  `store_uploads()` from `routes/batches.py`, the same flow as the Upload page. It needs the `X-API-Key` header
+  (`INTAKE_API_KEY` in `.env`, checked by `require_intake_key()` in `app/auth.py`); the key can only upload.
+  Uploads are recorded as "n8n (email intake)".
+- n8n credentials (Gmail app password, the API key) live only in n8n, never in an exported workflow file.
+
 ## Database
 - SQLAlchemy 2 typed models in `app/models/` (one file per table, all imported in `app/models/__init__.py`).
 - Every schema change is a new Alembic migration in `services/api/alembic/versions/`. Never edit a migration

@@ -5,6 +5,7 @@ project's public keys (downloaded once and cached), so the API needs no secret.
 The web app's proxy puts the token in the `Authorization: Bearer ...` header.
 """
 
+import secrets
 from functools import lru_cache
 from typing import Annotated, Any
 from uuid import UUID
@@ -77,3 +78,28 @@ def _not_logged_in(message: str) -> HTTPException:
 
 
 CurrentUserDep = Annotated[User, Depends(get_current_user)]
+
+
+# Automations don't log in: they send a key, and can only upload documents.
+INTAKE_ACTOR = Actor("n8n (email intake)")
+
+
+def require_intake_key(
+    x_api_key: Annotated[str | None, Header()] = None,
+) -> Actor:
+    """The right `X-API-Key` header, or 401. Used only by /api/webhooks/inbound."""
+    expected = settings.intake_api_key.get_secret_value()
+    if not expected:
+        raise HTTPException(
+            503, "Email intake is not set up: INTAKE_API_KEY is missing."
+        )
+    # compare_digest takes the same time for any wrong key, so it can't be guessed
+    # one character at a time.
+    if not x_api_key or not secrets.compare_digest(
+        x_api_key.encode(), expected.encode()
+    ):
+        raise HTTPException(401, "Invalid API key.")
+    return INTAKE_ACTOR
+
+
+IntakeActorDep = Annotated[Actor, Depends(require_intake_key)]

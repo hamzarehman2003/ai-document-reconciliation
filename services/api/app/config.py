@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     # Tokens are checked with the project's public keys, so no secret is needed.
     supabase_url: str = ""
 
+    # Automations (n8n): the key for POST /api/webhooks/inbound. Empty = switched off.
+    intake_api_key: SecretStr = SecretStr("")
+
     # AI extraction
     gemini_api_key: SecretStr = SecretStr("")
     gemini_model: str = "gemini-flash-lite-latest"

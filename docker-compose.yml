@@ -17,5 +17,24 @@ services:
       timeout: 3s
       retries: 10
 
+  # Automation: workflows are built in the browser at http://localhost:5678
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:stable
+    container_name: invoiceiq-n8n
+    restart: unless-stopped
+    environment:
+      GENERIC_TIMEZONE: Asia/Karachi   # change to your time zone (used by schedules)
+      TZ: Asia/Karachi
+      N8N_PORT: 5678
+      WEBHOOK_URL: http://localhost:5678/
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n-data:/home/node/.n8n   # your workflows and credentials are kept here
+    extra_hosts:
+      # Lets n8n call our API on your PC at http://host.docker.internal:8001
+      - "host.docker.internal:host-gateway"
+
 volumes:
   db-data:
+  n8n-data:
